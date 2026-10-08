@@ -53,7 +53,7 @@
 
 ## 📊 Навыки
 - **Low-code:** n8n, Apify, Google Sheets
-- **AI:** DeepSeek, OpenAI, RAG, Qdrant, промптинг
+- **AI:** DeepSeek, OpenAI, RAG, Qdrant, Supabase, промптинг
 - **Интеграции:** REST API, Webhooks, Telegram Bot API
 - **Парсинг:** Apify, HTML Extract, JSON
 - **Моделирование:** BPMN 2.0
