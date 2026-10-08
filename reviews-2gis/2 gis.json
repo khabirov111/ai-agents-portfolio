@@ -1,0 +1,220 @@
+{
+  "name": "2 gis",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/actors/zen-studio~2gis-reviews-scraper/runs/last/dataset/items?token=apify_api_7LlljaqXnseGYvTmCdgMfHHk15EhAo3pt2IE",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "9e3df781-6165-49ba-ab36-ca7f9946f037",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -32
+      ],
+      "id": "a79d9964-4059-4810-908c-4af53f6d4eb2",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "ROLE:\nТы — аналитик рынка компьютерных клубов города Октябрьский.\nТы анализируешь свежие отзывы из 2ГИС и формируешь дайджест.\n\nGOAL:\nСформировать отчет о новых отзывах за неделю по всем компьютерным клубам города.\n\nCONTEXT:\nНа вход подаются отзывы из 2ГИС. Каждый отзыв содержит:\n- Название клуба (placeName)\n- Текст отзыва (reviewText)\n- Оценку (rating)\n- Автора (authorName)\n- Дату (createdAt)\n\nTASK:\n1. Сгруппируй отзывы по названиям клубов.\n2. Для каждого клуба подсчитай количество новых отзывов.\n3. Выведи все отзывы в формате: автор, дата, оценка, текст.\n4. Сравни количество отзывов с прошлым периодом (если есть история).\n5. Сделай краткий вывод.\n\nOUTPUT FORMAT:\n📊 **Еженедельный дайджест отзывов**\n📅 {неделя} | г. Октябрьский, Башкортостан\n\n---\n\n🏢 **Клуб: {название}**\n📝 Всего отзывов за неделю: {количество}\n\n1️⃣ **Автор:** {имя} | 📅 {дата} | ⭐ {оценка}/5\n💬 \"{текст отзыва}\"\n\n...\n\n📌 **Итог:** {краткий вывод}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        -32
+      ],
+      "id": "6352533b-0be1-49b5-8346-be06f1ee4f84",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ]
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -32
+      ],
+      "id": "69ba69f9-761e-425c-b8aa-700e66638698",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "-1004372962580",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        -32
+      ],
+      "id": "045a7fb5-6957-487a-b8fe-1186a8904c68",
+      "name": "Send a text message",
+      "webhookId": "c02b9222-ff47-4c1a-9068-b5d3e197fe9e",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "TXaNXUA1dO4Q4V1Z",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.item.json.output;\nconst limit = 4000;\nconst parts = [];\n\nfor (let i = 0; i < text.length; i += limit) {\n    parts.push(text.slice(i, i + limit));\n}\n\nreturn parts.map(part => ({ json: { text: part } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        -32
+      ],
+      "id": "d98453a6-0480-4bfc-86d4-c28d65b788a9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        752,
+        208
+      ],
+      "id": "17d78227-303c-46f6-ab15-896ff3570c23",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZvptOMfXQlpAX1tX",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9aafa76b-2739-486b-b502-db4b6a7c00ad",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "vD4vG90BCUO2nyaP",
+  "tags": []
+}
