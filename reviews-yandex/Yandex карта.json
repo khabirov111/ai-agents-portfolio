@@ -1,0 +1,1110 @@
+{
+  "name": "Yandex карта",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "=author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            },
+            {}
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        -608
+      ],
+      "id": "5fd98dc4-d793-4d35-a2b3-691a7f5fc0b9",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "=club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        -416
+      ],
+      "id": "7b66e152-47d8-4007-b176-679031a61d85",
+      "name": "HTML1"
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/mid/178838287044/reviews/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&tab=reviews&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        -416
+      ],
+      "id": "4ddc70bf-9691-4872-a796-85dce377a7f1",
+      "name": "MID"
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/kinggaming/242798458847/reviews/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&tab=reviews&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        -608
+      ],
+      "id": "ac2abe71-36de-4afd-ae2b-d8ff13dcef60",
+      "name": "King"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json}}",
+        "options": {
+          "systemMessage": "ROLE:\nТы — аналитик отзывов компьютерных клубов города Октябрьский. Ты анализируешь свежие отзывы из Яндекс Карт за последнюю неделю и формируешь краткий дайджест для владельца клуба Mid.\n\nGOAL:\nСформировать еженедельный дайджест свежих отзывов (только за последние 7 дней), который позволит владельцу:\n- за 1 минуту понять, что пишут гости о клубах города;\n- увидеть, какие клубы получают новые отзывы;\n- заметить позитивные и негативные моменты;\n- понять общую динамику на рынке.\n\nCONTEXT:\nНа вход подаются отзывы из Яндекс Карт, собранные за последние 7 дней.\nКаждый отзыв содержит:\n- author — имя автора\n- text — текст отзыва\n- date — дата отзыва (например, \"24 ноября 2024\")\n- club_name — название клуба\n- rating_raw — текст с рейтингом (например, \"Оценка 5 Из 5\")\n\nРезультат читает владелец клуба Mid в Telegram.\n\nTASK:\n1. Сгруппируй отзывы по клубам (используй поле club_name).\n2. Для каждого клуба подсчитай количество отзывов за неделю.\n3. Выведи все отзывы с автором, датой и текстом.\n4. Определи тональность каждого отзыва:\n   - ✅ Позитивный (если текст хвалит).\n   - ⚠️ Негативный (если есть жалобы).\n   - ➖ Нейтральный (если просто факт).\n5. Извлеки рейтинг из поля rating_raw (например, из \"Оценка 5 Из 5\" возьми 5).\n6. Выдели 2-3 ключевые темы из отзывов (например, \"персонал\", \"компьютеры\", \"чистота\", \"цены\").\n7. Сделай краткий вывод по неделе.\n\nINSTRUCTION:\n1. Получи данные из входящего сообщения.\n2. Проверь, что массив отзывов не пустой. Если пусто — сообщи: \"За последнюю неделю новых отзывов не появилось\".\n3. Для каждого отзыва определи тональность по тексту.\n4. Извлеки число рейтинга из поля rating_raw (например, \"Оценка 5 Из 5\" → 5).\n5. Сгруппируй отзывы по клубам.\n6. Для каждого клуба посчитай общее количество и разбивку по тональности.\n7. Сформируй дайджест строго по формату.\n8. В конце добавь вывод: какие темы повторяются чаще всего.\n\nCONSTRAINTS:\n- Работай ТОЛЬКО со свежими отзывами (за последние 7 дней). Старые не упоминай.\n- Не выдумывай отзывы и авторов — только те, что переданы.\n- Не оценивай клубы как «хорошие» или «плохие» — только факты.\n- Не давай рекомендаций по управлению клубом.\n- Пиши нейтральным, деловым языком.\n- Сохраняй оригинальный текст отзывов без изменений.\n- Ответ не длиннее 3000 символов (лимит Telegram).\n- Без форматирования ** и *, только эмодзи.\n\nOUTPUT FORMAT:\n📊 **Еженедельный дайджест отзывов (Яндекс Карты)**\n📅 Свежие отзывы за последние 7 дней | г. Октябрьский\n\n---\n\n🏢 **Клуб: {название}**\n📝 Новых отзывов: {количество}\n\n1️⃣ 👤 {автор} | 📅 {дата} | ⭐ {рейтинг}/5\n💬 \"{текст}\"\n{✅/⚠️/➖}\n\n2️⃣ 👤 {автор} | 📅 {дата} | ⭐ {рейтинг}/5\n💬 \"{текст}\"\n{✅/⚠️/➖}\n\n...\n\n---\n\n📌 **Общий итог по неделе:**\n- Всего новых отзывов: {число}\n- Позитивных: {число} ✅\n- Негативных: {число} ⚠️\n- Нейтральных: {число} ➖\n\n💡 **Ключевые темы:**\n- {тема 1}\n- {тема 2}\n- {тема 3}\n\n📊 **Вывод:** {краткий вывод о настроении гостей за неделю}\n\nDATA:\nСвежие отзывы за последние 7 дней:\n{массив отзывов с полями author, text, date, club_name, rating_raw}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1312,
+        -128
+      ],
+      "id": "82f429e9-b0b2-4942-a50d-fc7c3e7d89a2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        112
+      ],
+      "id": "2a13b946-32b3-4444-bf57-4a4ab587c773",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZvptOMfXQlpAX1tX",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -416
+      ],
+      "id": "8ff331eb-f867-47be-862c-3cb6db959894",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -608
+      ],
+      "id": "f88028e5-5c39-42e0-a094-90a04ba5d7ad",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "chatId": "-1004372962580",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1664,
+        -128
+      ],
+      "id": "491e3cbc-95ae-42a1-a1c3-bf2bdd6b72dd",
+      "name": "Send a text message",
+      "webhookId": "ac4faea2-2f81-4547-8575-58dd83ec6175",
+      "credentials": {
+        "telegramApi": {
+          "id": "TXaNXUA1dO4Q4V1Z",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/jojo_kiberzona/49561370161/reviews/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&tab=reviews&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        -224
+      ],
+      "id": "b0b2b5bc-836c-4e49-a430-1f378393808e",
+      "name": "Jojo"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "=club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        -224
+      ],
+      "id": "a9d6117f-a8ce-4606-ae1b-721f26868ca8",
+      "name": "HTML2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -224
+      ],
+      "id": "9b8de22e-c985-4cc5-9e31-c652f03f8187",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/go_katku/96128267060/reviews/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&tab=reviews&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        -32
+      ],
+      "id": "fa8a39bd-0e10-44c5-aed6-420c46ee15c3",
+      "name": "Go katky"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "=club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        -32
+      ],
+      "id": "40f01d8c-613d-4f80-afc9-52647fdfa040",
+      "name": "HTML3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -32
+      ],
+      "id": "53ea5e74-e65b-4171-80ce-26a59e583ba9",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        -128
+      ],
+      "id": "3b87ccab-d2bf-45d5-b31a-fe2982b044e2",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/x_gaming/9804111217/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        160
+      ],
+      "id": "396c7c18-8c03-4ef2-a6da-018525a6b7ee",
+      "name": "X gaming"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "=club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        160
+      ],
+      "id": "96ba6d51-485c-411d-9841-5884509a014d",
+      "name": "HTML4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        160
+      ],
+      "id": "1dcf66ee-d190-42a1-bc62-855177db32b4",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "url": "https://yandex.ru/maps/org/cyberfocus_place/42964574977/?display-text=%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BB%D1%83%D0%B1%D1%8B&ll=53.528312%2C54.481916&mode=search&sll=53.495353%2C54.481905&text=category_id%3A%2897550856506%29&z=13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        352
+      ],
+      "id": "887850fe-2fd1-4884-8eb5-a5a3f751cfe4",
+      "name": "CyberFocus place 34"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "author",
+              "cssSelector": ".business-review-view__author-name\t",
+              "returnArray": true
+            },
+            {
+              "key": "text",
+              "cssSelector": ".business-review-view__body",
+              "returnArray": true
+            },
+            {
+              "key": "date",
+              "cssSelector": ".business-review-view__date",
+              "returnArray": true
+            },
+            {
+              "key": "rating_raw",
+              "cssSelector": ".business-rating-badge-view__stars",
+              "returnValue": "attribute",
+              "attribute": "aria-label",
+              "returnArray": true
+            },
+            {
+              "key": "=club_name",
+              "cssSelector": ".card-title-view__title",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        352
+      ],
+      "id": "9c025c56-146c-461f-9905-07c3a1633774",
+      "name": "HTML5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// На вход приходит массив items — по одному на клуб (MID, King)\n// В каждом item — объект с полями: author[], text[], date[], rating_raw[], club_name[]\n// (HTML-нода с returnArray:true собирает всё в массивы)\n\nconst now = new Date();\nconst weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n\nconst result = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n\n  // Пропускаем пустые\n  if (!d.author || !d.date) continue;\n\n  const count = Math.max(\n    d.author.length,\n    d.text?.length || 0,\n    d.date.length\n  );\n\n  for (let i = 0; i < count; i++) {\n    const rawDate = d.date[i];\n    const parsed = parseDate(rawDate);\n    if (!parsed) continue;\n    if (parsed < weekAgo) continue;   // старее недели — пропускаем\n\n    result.push({\n      json: {\n        club_name: d.club_name?.[0] || d.club_name || 'Неизвестный клуб',\n        author:    d.author[i] || '',\n        text:      d.text?.[i] || '',\n        date:      parsed.toISOString().slice(0, 10),\n        date_raw:  rawDate,\n        rating:    extractRating(d.rating_raw?.[i])\n      }\n    });\n  }\n}\n\n// Если за неделю ничего не нашлось — отдаём пустой массив,\n// AI Agent увидит и напишет \"новых отзывов нет\"\nif (result.length === 0) {\n  return [{ json: { reviews: [], message: 'За последнюю неделю новых отзывов не появилось' } }];\n}\n\nreturn [{ json: { reviews: result.map(r => r.json) } }];\n\n// ---- helpers ----\n\nfunction parseDate(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim().toLowerCase();\n\n  // 1. ISO: 2026-09-18\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) {\n    const d = new Date(s);\n    return isNaN(d) ? null : d;\n  }\n\n  // 2. Относительные: сегодня / вчера / N дней назад\n  if (s === 'сегодня') return new Date();\n  if (s === 'вчера')   return new Date(Date.now() - 86400000);\n  const m = s.match(/(\\d+)\\s*(день|дня|дней)\\s*назад/);\n  if (m) return new Date(Date.now() - parseInt(m[1]) * 86400000);\n\n  // 3. \"24 ноября 2024\" или \"24 ноября\"\n  const months = {\n    'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3, 'мая': 4, 'июня': 5,\n    'июля': 6, 'августа': 7, 'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11\n  };\n  const m2 = s.match(/^(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?$/);\n  if (m2) {\n    const day = parseInt(m2[1], 10);\n    const month = months[m2[2]];\n    if (month === undefined) return null;\n    const year = m2[3] ? parseInt(m2[3], 10) : new Date().getFullYear();\n    return new Date(year, month, day);\n  }\n\n  return null;\n}\n\nfunction extractRating(raw) {\n  if (!raw) return null;\n  // \"Оценка 5 Из 5\" → 5\n  const m = String(raw).match(/(\\d+(?:[.,]\\d+)?)/);\n  return m ? parseFloat(m[1].replace(',', '.')) : null;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        352
+      ],
+      "id": "d8fd6d34-335f-48b3-bb1d-2041cfebc1fa",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "29ec95b5-1a1f-4fa4-b50b-71b1b010753a",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -608
+      ],
+      "id": "6a95b34c-71e8-4577-b543-8e6e9aebe2ee",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2645e38c-4272-43a2-b8c6-e0b092533d39",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -416
+      ],
+      "id": "fa4053c9-f5d1-44bb-835d-58d3eea5d13e",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2645e38c-4272-43a2-b8c6-e0b092533d39",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -224
+      ],
+      "id": "3800260e-c0d4-4137-b944-c244c403e69a",
+      "name": "Filter2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2645e38c-4272-43a2-b8c6-e0b092533d39",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -32
+      ],
+      "id": "a8edfd27-46ab-404c-9dce-58996516a524",
+      "name": "Filter3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2645e38c-4272-43a2-b8c6-e0b092533d39",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        160
+      ],
+      "id": "c96b8026-f8bb-4dc0-9ae4-2edae4471867",
+      "name": "Filter4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2645e38c-4272-43a2-b8c6-e0b092533d39",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        352
+      ],
+      "id": "aa4634f1-9fcd-4739-ab5c-506d32048a1a",
+      "name": "Filter5"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                2
+              ]
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -144,
+        -144
+      ],
+      "id": "c20849e0-08a7-4af9-88d2-150458dd2766",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MID": {
+      "main": [
+        [
+          {
+            "node": "HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "King": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Jojo": {
+      "main": [
+        [
+          {
+            "node": "HTML2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Go katky": {
+      "main": [
+        [
+          {
+            "node": "HTML3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Filter2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Filter3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X gaming": {
+      "main": [
+        [
+          {
+            "node": "HTML4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Filter4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CyberFocus place 34": {
+      "main": [
+        [
+          {
+            "node": "HTML5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML5": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Filter5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter4": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter5": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "King",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Jojo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Go katky",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "X gaming",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CyberFocus place 34",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "ca84e3b6-2242-45f4-83a3-335e8325ef58",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "fEPsUTKXMysu24li",
+  "tags": []
+}
