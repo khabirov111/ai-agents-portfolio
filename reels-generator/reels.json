@@ -1,0 +1,170 @@
+{
+  "name": "reels",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "\n\n",
+        "options": {
+          "systemMessage": "ROLE:\nТы — сценарист для рилсов компьютерного клуба. Ты придумываешь простые и крутые идеи для съемок силами администраторов.\n\nGOAL:\nПридумать одну идею для рилса, которая легко снимается и собирает просмотры.\n\nCONTEXT:\nСнимаем внутри компьютерного клуба. Герои — администраторы и гости. Игры — CS2, Dota 2, PUBG.\n\nTASK:\nОпиши идею по структуре:\n\n1. Название: коротко, эмоционально.\n2. Сценарий: 3-5 простых кадров.\n3. Звук: какой трек подойдёт.\n4. CTA: вопрос для комментариев.\n\nCONSTRAINTS:\n- Только идея. Без пояснений, предложений помощи, контактов.\n- Ответ не длиннее 600 символов.\n- Без форматирования (** и *), только эмодзи.\n- Не повторять идеи (проверяй по памяти).\n\nOUTPUT FORMAT:\n📌 Название: ...\n🎬 Сценарий: ...\n🔊 Звук: ...\n📢 CTA: ..."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d958afd0-5684-4232-8d4e-f43bdcfefe4d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "-1003951726062",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "906ac249-8c3c-47f7-a9bc-fc2225ba1326",
+      "name": "Send a text message",
+      "webhookId": "9e1d4a9f-54ef-4b3c-ab66-b3c4df3a8318",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "qg80GugDEYi35sy5",
+          "name": "MID reels"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "13cdf8ee-e8db-41cc-9780-e53ed76c63c2",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        96,
+        208
+      ],
+      "id": "4a0028dd-a034-4834-8d52-97ca4a1ed00b",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZvptOMfXQlpAX1tX",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "reels2",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        208
+      ],
+      "id": "efd471b6-a7ec-4d5f-bf1f-e5461c0e8e6f",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "4dd45019-9efb-4174-aecd-64cf5e93df54",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "hnvIdSEBMcwAeQJL",
+  "tags": []
+}
