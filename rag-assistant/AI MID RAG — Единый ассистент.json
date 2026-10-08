@@ -1,0 +1,1350 @@
+{
+  "name": "AI MID — Единый ассистент v5",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -1408,
+        848
+      ],
+      "id": "5bee493c-8eb8-4247-9428-c38fe68a76ba",
+      "name": "Telegram Trigger",
+      "webhookId": "unified-webhook-aaaa-bbbb-cccc",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nif (item.callback_query) {\n  return [{ json: { type: 'callback', payload: item } }];\n}\n\nif (item.message) {\n  const chatId = item.message.chat.id;\n  const isOwner = chatId === 8893645589;\n\n  const hasText = !!item.message.text;\n  const hasVoice = !!item.message.voice;\n  const hasAudio = !!item.message.audio;\n  const hasPhoto = !!item.message.photo;\n  const hasVideo = !!item.message.video;\n  const hasDocument = !!item.message.document;\n  const hasSticker = !!item.message.sticker;\n\n  if (hasVoice || hasAudio) {\n    return [{ json: { type: 'audio_message', payload: item } }];\n  }\n\n  if (hasPhoto) {\n    return [{ json: { type: 'photo_message', payload: item } }];\n  }\n\n  if (hasVideo) {\n    return [{ json: { type: 'video_message', payload: item } }];\n  }\n\n  if (hasDocument) {\n    return [{ json: { type: 'document_message', payload: item } }];\n  }\n\n  if (hasSticker) {\n    return [{ json: { type: 'unknown', payload: item } }];\n  }\n\n  if (hasText) {\n    return [{ json: { type: isOwner ? 'owner_message' : 'admin_message', payload: item } }];\n  }\n\n  return [{ json: { type: 'unknown', payload: item } }];\n}\n\nreturn [{ json: { type: 'unknown', payload: item } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        848
+      ],
+      "id": "5eb7a82e-6930-4e35-9d1d-23b3219edf57",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "admin_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "admin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "callback",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "callback"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "audio_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "photo_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "video_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "document_message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "document"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -960,
+        784
+      ],
+      "id": "a9a489b1-f96e-4954-a357-39ce51930278",
+      "name": "Switch Type"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.transcript ? $json.transcript : $json.payload.message.text }}",
+        "options": {
+          "systemMessage": "ROLE:\nТы — AI-ассистент администратора компьютерного клуба Mid.\n\nGOAL:\nДать точный, вежливый и полезный ответ на вопрос администратора.\n\nTASK:\n1. Найди ответ в базе знаний.\n2. Сформулируй ответ, ссылаясь на пункт регламента.\n3. Если ответа нет — верни ровно: «Извините, затрудняюсь ответить. Напишите Владиславу: @brdk_hh»\n\nCONSTRAINTS:\n- ОТВЕЧАЙ ТОЛЬКО НА РУССКОМ.\n- Ссылайся на пункт регламента.\n- Ответ не длиннее 1000 символов.\n- Без Markdown ** и * — используй эмодзи.\n\nOUTPUT FORMAT:\n💡 Ответ: {ответ}\n📖 Источник: {пункт регламента}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "30a5f7fb-7f15-42ae-8d77-f92610e32e3e",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        240
+      ],
+      "id": "dbb22fdf-2353-4ad3-9ef8-3cbb43943b37",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZvptOMfXQlpAX1tX",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Router').item.json.payload.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        240
+      ],
+      "id": "6efd3730-8998-4b0f-b0ce-d39295927210",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "={{ $('Router').item.json.payload.message.text || $('Router').item.json.transcript }}",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "Mid ",
+          "mode": "list",
+          "cachedResultName": "Mid "
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        240
+      ],
+      "id": "5fc24618-bed8-43f7-ab27-da48504bd1e9",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "neC3H3dFWNXIFpyA",
+          "name": "Qdrant n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        448
+      ],
+      "id": "e96cf79f-774a-41ea-aa97-6d74257ae16e",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "GIDfjYbALP5URmSX",
+          "name": "Polza ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const uuid = $execution.id + '_' + Date.now();\n\nconst adminChatId = $('Router').item.json.payload.message.chat.id;\nconst adminUsername = $('Router').item.json.payload.message.chat.username || '';\n\nlet question;\nif ($('Prepare Audio Data').isExecuted) {\n  question = $('Prepare Audio Data').item.json.transcript || '[аудио без текста]';\n} else {\n  question = $('Router').item.json.payload.message.text || '[пусто]';\n}\n\nconst answer = $('AI Agent').item.json.output;\n\nreturn [{\n  json: {\n    uniqueId: uuid,\n    adminChatId: adminChatId,\n    adminUsername: adminUsername,\n    question: question,\n    answer: answer,\n    createdAt: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        208
+      ],
+      "id": "31d3763f-e2bf-4a8e-8e74-ca00e907bd9b",
+      "name": "Prepare Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0",
+          "mode": "list",
+          "cachedResultName": "MID Approvals",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uniqueId",
+              "displayName": "uniqueId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "adminChatId",
+              "displayName": "adminChatId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "adminUsername",
+              "displayName": "adminUsername",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "answer",
+              "displayName": "answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "createdAt",
+              "displayName": "createdAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        784,
+        208
+      ],
+      "id": "a73fccc6-1826-4530-9461-a38e281eb6b6",
+      "name": "Save to Google Sheets",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fLfY7X05ioUnmmE0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1004371185401",
+        "text": "=📩 НОВЫЙ ВОПРОС ОТ АДМИНА\n\n👤 Админ: {{ $('Telegram Trigger').item.json.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n❓ Вопрос: {{ $json.question }}\n\n🤖 Предложенный ответ:\n{{ $('AI Agent').item.json.output }}\n\n---\nНажми кнопку ниже, чтобы согласовать.",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Одобрить",
+                    "additionalFields": {
+                      "callback_data": "=approve_{{ $json.uniqueId }}"
+                    }
+                  },
+                  {
+                    "text": "💬 Написать лично",
+                    "additionalFields": {
+                      "callback_data": "=reject_{{ $json.uniqueId }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        208
+      ],
+      "id": "9007d1ca-1b9a-420d-952b-dcdef9665a9c",
+      "name": "Send Approval Request",
+      "webhookId": "unified-approval-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cb = $input.first().json.payload.callback_query;\nconst data = cb.data || '';\nconst idx = data.indexOf('_');\nconst action = idx > 0 ? data.substring(0, idx) : data;\nconst uniqueId = idx > 0 ? data.substring(idx + 1) : '';\n\nreturn [{\n  json: {\n    action: action,\n    uniqueId: uniqueId,\n    ownerChatId: cb.from.id,\n    messageId: cb.message.message_id,\n    callbackQueryId: cb.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        512
+      ],
+      "id": "1455b16e-f7ff-4c6c-a1f4-dce27c3dbe80",
+      "name": "Parse Callback"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0",
+          "mode": "list",
+          "cachedResultName": "MID Approvals",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "uniqueId",
+              "lookupValue": "={{ $('Parse Callback').item.json.uniqueId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -512,
+        512
+      ],
+      "id": "769cdd4f-1a08-44d3-ae5e-70ac5ad675da",
+      "name": "Get Answer from Sheet",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fLfY7X05ioUnmmE0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Callback').item.json.action }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Callback').item.json.action }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reject"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        512
+      ],
+      "id": "22b0580b-bbb6-4c18-8181-1daabc85dfb9",
+      "name": "Switch Action"
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Get Answer from Sheet').item.json.adminChatId }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        608
+      ],
+      "id": "19f2f4b1-baa4-47ae-acac-fc105928b152",
+      "name": "Typing Approve",
+      "webhookId": "unified-typing-approve-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $('Get Answer from Sheet').item.json.adminChatId }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        800
+      ],
+      "id": "73599f6b-acb4-4f99-bf69-88684bc7583f",
+      "name": "Typing Reject",
+      "webhookId": "unified-typing-reject-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get Answer from Sheet').item.json.adminChatId }}",
+        "text": "=✅ Ваш вопрос обработан!\n\n❓ Вопрос: {{ $('Get Answer from Sheet').item.json.question }}\n\n{{ $('Get Answer from Sheet').item.json.answer }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        608
+      ],
+      "id": "d45304d8-8031-4a77-b96c-57e5a1a639b7",
+      "name": "Send Answer to Admin",
+      "webhookId": "unified-send-answer-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1004371185401",
+        "text": "=✅ Команда выполнена: ответ отправлен админу.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        608
+      ],
+      "id": "8ae7c83c-41c1-432d-981a-c4fcdd7bc358",
+      "name": "Notify Owner Approve",
+      "webhookId": "unified-notify-owner-approve-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get Answer from Sheet').item.json.adminChatId }}",
+        "text": "=🙏 Извините, затрудняюсь ответить.\n\n📩 Пожалуйста, свяжитесь с Владиславом: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>\n\n✅ Он поможет решить ваш вопрос.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        800
+      ],
+      "id": "15a5b6a0-b698-4d25-9e9d-42701b6273ed",
+      "name": "Notify Reject",
+      "webhookId": "unified-notify-reject-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1004371185401",
+        "text": "=✅ Команда выполнена: админу отправлено сообщение про Владислава.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        800
+      ],
+      "id": "bb28e146-43b9-4efc-b185-64d375208f38",
+      "name": "Notify Owner Reject",
+      "webhookId": "unified-notify-owner-reject-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.payload.message.voice.file_id || $json.payload.message.audio.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        752
+      ],
+      "id": "68e78565-2268-4722-916c-85967d1fe5bd",
+      "name": "Get Audio File",
+      "webhookId": "cd24d772-e794-473c-bd1d-48f338d30aa7",
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ru"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -512,
+        752
+      ],
+      "id": "3febbcf2-f835-4e81-a1b6-e88fc22b6a89",
+      "name": "Transcribe Audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "GIDfjYbALP5URmSX",
+          "name": "Polza ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const transcript = $input.first().json.text || '';\nconst originalPayload = $('Router').item.json.payload;\n\nreturn [{\n  json: {\n    transcript: transcript,\n    payload: originalPayload\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        752
+      ],
+      "id": "cdfaf12e-1883-48e1-9583-17cd3317e8b9",
+      "name": "Prepare Audio Data"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.payload.message.photo.slice(-1)[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        944
+      ],
+      "id": "499ab0c1-744e-47e2-a731-4bb524eed280",
+      "name": "Get Photo File",
+      "webhookId": "09b4b2a8-d4ef-4bd8-a61e-3acb2fe3332e",
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "-1004371185401",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=📸 ФОТО ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        944
+      ],
+      "id": "88111279-aa7e-46cd-80cb-aa64ed028248",
+      "name": "Send Photo to Group",
+      "webhookId": "unified-send-photo-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📸 Ваше фото отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        944
+      ],
+      "id": "ac3bff55-c4ea-4a9a-8dcd-c1a4116a2424",
+      "name": "Reply About Photo",
+      "webhookId": "unified-reply-photo-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.payload.message.video.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        1136
+      ],
+      "id": "08a368e0-e7ff-4e2e-87a2-2240bbef4150",
+      "name": "Get Video File",
+      "webhookId": "533671c2-8995-48e8-b5d8-1b053b37a31a",
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendVideo",
+        "chatId": "-1004371185401",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=🎥 ВИДЕО ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        1136
+      ],
+      "id": "45647c4b-d11f-49fb-a913-0c700c0dc299",
+      "name": "Send Video to Group",
+      "webhookId": "unified-send-video-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n🎥 Ваше видео отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        1136
+      ],
+      "id": "b37164f0-04ee-414f-bd78-5bf44f0fe9b8",
+      "name": "Reply About Video",
+      "webhookId": "unified-reply-video-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.payload.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        1328
+      ],
+      "id": "f0f95715-0888-4fd6-8b9a-5a84d02b9134",
+      "name": "Get Document File",
+      "webhookId": "2c78656f-2e8e-4648-94e4-97f0d31d4bd8",
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "-1004371185401",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "=📄 ДОКУМЕНТ ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        1328
+      ],
+      "id": "5fb98c10-712e-48c1-a670-1b3ce23ba695",
+      "name": "Send Document to Group",
+      "webhookId": "unified-send-doc-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📄 Ваш документ отправлен в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        1328
+      ],
+      "id": "7a40a98d-466a-4bc9-a56d-53cf9a46ae71",
+      "name": "Reply About Document",
+      "webhookId": "unified-reply-doc-webhook",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "xfnHAQ3k3NJW5UyU",
+          "name": "AI mid"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Switch Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Type": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Callback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Photo File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Video File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Document File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Callback": {
+      "main": [
+        [
+          {
+            "node": "Get Answer from Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Answer from Sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Typing Approve",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Typing Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typing Approve": {
+      "main": [
+        [
+          {
+            "node": "Send Answer to Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Typing Reject": {
+      "main": [
+        [
+          {
+            "node": "Notify Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Answer to Admin": {
+      "main": [
+        [
+          {
+            "node": "Notify Owner Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Reject": {
+      "main": [
+        [
+          {
+            "node": "Notify Owner Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Prepare Audio Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Audio Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Photo File": {
+      "main": [
+        [
+          {
+            "node": "Send Photo to Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Photo to Group": {
+      "main": [
+        [
+          {
+            "node": "Reply About Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video File": {
+      "main": [
+        [
+          {
+            "node": "Send Video to Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Video to Group": {
+      "main": [
+        [
+          {
+            "node": "Reply About Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Document File": {
+      "main": [
+        [
+          {
+            "node": "Send Document to Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Document to Group": {
+      "main": [
+        [
+          {
+            "node": "Reply About Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "deea58e8-519a-4b59-9c83-3152769e291c",
+  "meta": {
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "KcHv3oMiHvVzNW3c",
+  "tags": []
+}
