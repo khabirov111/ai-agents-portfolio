@@ -1,0 +1,404 @@
+{
+  "name": "Неделя",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "edited_message",
+          "edited_channel_post",
+          "channel_post",
+          "*"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -96
+      ],
+      "id": "b6279792-add2-4a22-9ede-e6fb6d72ff22",
+      "name": "Telegram Trigger",
+      "webhookId": "1c68ed7d-a0e5-43b0-9818-05b6514bcfc4",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "EG6GEeqrqgPqUj9x",
+          "name": "Недельный отчёт"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "fbdff3ed-c4df-4a74-98a6-cc7fda185bf2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "6e682e29-eb18-4d50-8d92-2dc21f32a167",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "ROLE:\nТы — ассистент управляющего компьютерным клубом. \nТы получаешь данные из недельного отчёта Langame и готовишь:\n1. Дайджест по неделе с ключевыми показателями.\n2. Рейтинг администраторов по сумме продаж товаров.\nТы не делаешь прогнозов, не даёшь рекомендаций по управлению персоналом.\nТвоя задача — собрать факты и представить их в наглядном формате.\n\nGOAL:\nСформировать недельный дайджест, который позволит владельцу клуба:\n- за 1 минуту понять результаты недели;\n- увидеть динамику (сравнение с предыдущей неделей, если данные есть);\n- оценить эффективность администраторов по продажам товаров;\n- заметить аномалии (падение выручки, загрузки, продаж).\n\nCONTEXT:\nНа вход подаются данные из недельного Excel-отчёта платформы Langame.\nОтчёт содержит данные по каждой смене за неделю:\n- ID смены, дата начала/окончания, администратор\n- Итого выручка, количество чеков, средний чек\n- Загрузка ПК (%)\n- Количество уникальных гостей, новых гостей\n- Сумма продаж товаров, количество проданных товаров\n- Сумма продаж по каждой категории товаров\n\nРезультат читает владелец клуба в Telegram.\n\nTASK:\nНа основе переданных данных:\n1. Собери итоговые показатели за неделю:\n   - общая выручка\n   - общее количество чеков\n   - средний чек (средневзвешенный)\n   - средняя загрузка ПК\n   - общее количество гостей\n   - общая сумма продаж товаров\n   - общее количество проданных товаров\n2. Рассчитай долю продаж товаров в общей выручке.\n3. Посчитай для каждого администратора:\n   - сумма продаж товаров за все его смены\n   - количество смен\n   - средняя выручка за смену (по желанию)\n4. Отсортируй администраторов по сумме продаж товаров (по убыванию).\n5. Сравни показатели недели с предыдущей неделей (если данные доступны).\n6. Сформируй дайджест строго по указанному формату.\n\nINSTRUCTION:\n1. Получи данные из входящего сообщения.\n2. Извлеки все смены из отчёта (14 записей).\n3. Просуммируй по всем сменам:\n   - Итого выручка → общая выручка\n   - Количество чеков → общее количество чеков\n   - Уникальных гостей → общее количество гостей\n   - Сумма проданных товаров → общие продажи товаров\n   - Количество проданных товаров → общее количество товаров\n4. Рассчитай средний чек: общая выручка / общее количество чеков.\n5. Рассчитай среднюю загрузку: среднее арифметическое загрузки по сменам.\n6. Для каждого администратора:\n   - отфильтруй его смены\n   - сложи сумму продаж товаров\n   - посчитай количество смен\n7. Отсортируй администраторов по сумме продаж товаров (по убыванию).\n8. Если есть данные за предыдущую неделю, сравни динамику.\n9. Сформируй сообщение строго по формату.\n\nCONSTRAINTS:\n- Не выдумывай цифры — только из переданных данных.\n- Не используй оценочных суждений об администраторах.\n- Не делай прогнозов или выводов о причинах.\n- Пиши нейтральным, деловым языком.\n- В рейтинге показывай только ТОП-5 администраторов.\n- Если администратор не продал товаров, не включай его в рейтинг.\n\nOUTPUT FORMAT:\nВерни результат строго в следующем формате:\n\n📊 **Недельный дайджест**\n📅 {дата начала недели} — {дата окончания недели}\n\n💰 **Общая выручка:** {сумма} ₽\n🧾 **Всего чеков:** {число}\n📈 **Средний чек:** {число} ₽\n💻 **Средняя загрузка ПК:** {процент}%\n👥 **Всего гостей:** {число} (новых: {число})\n🛍️ **Продажи товаров:** {сумма} ₽ ({количество} ед., {доля от выручки}%)\n\n📈 **Динамика:** [если есть сравнение с прошлой неделей: +X% или -X%]\n\n---\n\n🏆 **РЕЙТИНГ АДМИНИСТРАТОРОВ ПО СУММЕ ПРОДАЖ ТОВАРОВ:**\n\n{1}. {Имя} — {сумма} ₽ | {количество} смен\n{2}. {Имя} — {сумма} ₽ | {количество} смен\n{3}. {Имя} — {сумма} ₽ | {количество} смен\n{4}. {Имя} — {сумма} ₽ | {количество} смен\n{5}. {Имя} — {сумма} ₽ | {количество} смен\n\n📌 **Итог:** {короткий вывод о неделе}\n\nDATA:\n[здесь будут все данные из недельного отчёта]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "e3a6f8d6-2fc7-4f38-bcaf-efeabaa2e29d",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "-1004372962580",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        -96
+      ],
+      "id": "b66e4fa2-0690-474c-900c-cb76d16f42a0",
+      "name": "Send a text message",
+      "webhookId": "f0ec0321-24d6-4e71-a8d2-000641b7a09b",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "TXaNXUA1dO4Q4V1Z",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f55e3b31-3a73-4978-a05b-fb5fbc7c71df",
+              "leftValue": "=={{ $json.message?.document?.file_name || $json.channel_post?.document?.file_name || '' }}",
+              "rightValue": "=Отчет_по_неделе",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "592f7484-c729-4117-8da5-a45e2db06f44",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ",
+          "mode": "list",
+          "cachedResultName": "Нед",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1168,
+        144
+      ],
+      "id": "9422c2fd-cca6-4ece-b712-c4de57fc024e",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fLfY7X05ioUnmmE0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ",
+          "mode": "list",
+          "cachedResultName": "Нед",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mTSyMOGLIrxezGFWjwKj42Ygas5LBJu35yMEFgKcaMQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Неделя": "={{ $json.result }}",
+            "Мид": "1"
+          },
+          "matchingColumns": [
+            "Мид"
+          ],
+          "schema": [
+            {
+              "id": "Мид",
+              "displayName": "Мид",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Неделя",
+              "displayName": "Неделя",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1584,
+        -96
+      ],
+      "id": "1fcf19ff-8afa-415e-9318-4f335b82561c",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fLfY7X05ioUnmmE0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "12ned12",
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        976,
+        112
+      ],
+      "id": "cca7bb80-c1d6-4ffe-9b09-19a20616df9b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        832,
+        112
+      ],
+      "id": "b074ce78-2dbf-40f4-9070-4cc81810c61c",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "ZvptOMfXQlpAX1tX",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e0fd6957-e49b-4f1c-8d6b-5eda6ad9d931",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "hwFQz6jt0R8RQr9y",
+  "tags": []
+}
