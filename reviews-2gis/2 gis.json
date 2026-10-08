@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "url": "https://api.apify.com/v2/actors/zen-studio~2gis-reviews-scraper/runs/last/dataset/items?token=apify_api_7LlljaqXnseGYvTmCdgMfHHk15EhAo3pt2IE",
+        "url": "https://api.apify.com/v2/actors/zen-studio~2gis-reviews-scraper/runs/last/dataset/items?token=apify_api_*******************************",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
