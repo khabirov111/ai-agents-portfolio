@@ -4,7 +4,7 @@
 
 ## 🎯 Что я умею
 - Сборка AI-агентов в n8n
-- Системный промптинг (DeepSeek, OpenAI)
+- Системный промптинг
 - Парсинг данных: Apify, HTML, REST API
 - RAG с векторными базами (Qdrant, Supabase)
 - Интеграции: Telegram, Google Sheets, API
