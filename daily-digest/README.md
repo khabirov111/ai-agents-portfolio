@@ -22,5 +22,5 @@ AI-агент в n8n автоматически:
 - Ошибки обрабатываются через IF-ноды.
 
 ## 📁 Файлы
-- `workflow.json` — экспорт workflow.
+- `https://github.com/khabirov111/ai-agents-portfolio/blob/main/daily-digest/%D0%9E%D1%82%D1%87%D1%91%D1%82%20%D0%B7%D0%B0%201%20%D1%81%D0%BC%D0%B5%D0%BD%D1%83%20(2).json` — экспорт workflow.
 - `prompt.md` — системный промпт.
