@@ -1,0 +1,960 @@
+{
+  "name": "02 — Ислам: ИИ-ассистент ВИК в Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst m = item.json.message || item.json.edited_message || {};\nif (!m.chat?.id) throw new Error('Не найден chat.id в сообщении Telegram');\nlet inputType = 'text'; let fileId = null;\nlet text = m.text || m.caption || '';\nif (Array.isArray(m.photo) && m.photo.length) { inputType = 'photo'; fileId = m.photo[m.photo.length - 1].file_id; }\nelse if (m.voice?.file_id || m.audio?.file_id) { inputType = 'voice'; fileId = (m.voice || m.audio).file_id; }\nelse if (!text) inputType = 'unsupported';\nconst allowedChatId = 'YOUR_ISLAM_TELEGRAM_CHAT_ID';\nconst authorized = String(m.chat.id) === allowedChatId;\nreturn [{ json: { chatId: m.chat.id, userId: m.from?.id, firstName: m.from?.first_name || '', messageId: m.message_id, inputType, text, fileId, authorized }, binary: item.binary }];"
+      },
+      "id": "dcf88a68-035f-4287-b9b6-25e803794cdd",
+      "name": "Определить тип сообщения",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7ed55a7a-7560-45a6-9581-66f22e3af00b",
+              "leftValue": "={{ $json.authorized }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "57eef755-3d75-42ef-9348-b9507cfba776",
+      "name": "Проверить доступ Ислама",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json; return [{json:{chatId:j.chatId,text:'Доступ к инженерному ассистенту не настроен. Администратор должен указать Telegram chat ID Ислама в workflow n8n.'}}];"
+      },
+      "id": "f8f7a75a-9bdb-4cdc-bbbb-991a45a4e7f2",
+      "name": "Ответ: доступ не настроен",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8c9810c5-4ca4-4400-af3a-62b07162d5dd",
+              "leftValue": "={{ $json.inputType }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c321eb59-345e-42b8-b6c7-61e7b3624a20",
+      "name": "Это текст?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; return [{json:{chatId:j.chatId,query:j.text,inputType:j.inputType}}];"
+      },
+      "id": "0efde7f9-7f46-4555-aedc-d3592280f7aa",
+      "name": "Подготовить текстовый вопрос",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e300c928-1306-4670-895d-90b2351c449e",
+              "leftValue": "={{ $json.inputType }}",
+              "rightValue": "photo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e0133231-dc05-4252-a7b0-4a6126122c22",
+      "name": "Это фото?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$input.first(); const j=item.json;\nif (!item.binary?.data) throw new Error('Не найден binary.data. Проверьте, что у Telegram Trigger включён Download.');\nconst buf=await this.helpers.getBinaryDataBuffer(0,'data');\nconst mime=item.binary.data.mimeType || 'image/jpeg';\nreturn [{json:{chatId:j.chatId,caption:j.text||'',mimeType:mime,imageBase64:buf.toString('base64')}}];"
+      },
+      "id": "e2b4dcfe-b0eb-44d0-8777-8095b45a9d81",
+      "name": "Подготовить фото для анализа",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_POLZA_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', max_tokens: 700, messages: [{ role: 'user', content: [{ type: 'text', text: 'Опиши только то, что действительно видно на фотографии, прочитай различимые надписи и измерительные обозначения. Не делай выводов о соответствии нормативам без текста документа. Если фото размыто или масштаб/единицы неясны, прямо укажи это. Подпись пользователя: ' + $('Подготовить фото для анализа').item.json.caption }, { type: 'image_url', image_url: { url: 'data:' + $('Подготовить фото для анализа').item.json.mimeType + ';base64,' + $('Подготовить фото для анализа').item.json.imageBase64 } }] }] } }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "7dc69529-94af-46dc-8d0f-7eace6f331a8",
+      "name": "Распознать фото (OpenAI Vision)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const base=$('Подготовить фото для анализа').item.json;\nconst description=r.choices?.[0]?.message?.content || 'Не удалось надёжно распознать изображение.';\nreturn [{json:{chatId:base.chatId,query:'Инженер прислал фото для визуального и измерительного контроля. Подпись: '+(base.caption||'нет')+'\\nОписание видимого на фото (модель может ошибаться):\\n'+description}}];"
+      },
+      "id": "3bde6fb0-b3eb-47fd-8b1d-e0dfe5cfdfff",
+      "name": "Сформировать вопрос по фото",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f31ab0c5-9e19-4d94-ad15-fd131f40b2d4",
+              "leftValue": "={{ $json.inputType }}",
+              "rightValue": "voice",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "04dbb69e-6730-4acf-b768-9df11eacb5f6",
+      "name": "Это голосовое?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/audio/transcriptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_POLZA_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "gpt-4o-mini-transcribe"
+            },
+            {
+              "name": "language",
+              "value": "ru"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "4c59bcb6-b5f5-4ea7-b348-689eb666dab7",
+      "name": "Расшифровать голосовое",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const base=$('Определить тип сообщения').item.json;\nconst transcript=(r.text||'').trim();\nreturn [{json:{chatId:base.chatId,query:transcript ? transcript : 'Не удалось распознать голосовое сообщение. Попроси Ислама отправить его ещё раз или написать текстом.'}}];"
+      },
+      "id": "99da7151-7a3d-4579-84a9-fd87e30ce14a",
+      "name": "Подготовить вопрос из голоса",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; return [{json:{chatId:j.chatId,text:'Поддерживаются текстовые сообщения, голосовые сообщения и фотографии. Пришлите вопрос или фото ещё раз.'}}];"
+      },
+      "id": "f1f3051d-6ab9-48d3-b4aa-c1cfc444997e",
+      "name": "Ответ: формат не поддерживается",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.query) throw new Error('Пустой вопрос после обработки сообщения'); return [{json:{chatId:j.chatId,query:j.query}}];"
+      },
+      "id": "f21eb838-582d-4062-af59-77697f4d18a6",
+      "name": "Подготовить вопрос к поиску",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_POLZA_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'text-embedding-3-small', input: $json.query } }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "958422a8-ead0-4593-b3fe-710aeb3d2293",
+      "name": "Векторизовать вопрос",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "32f120bf-75c6-4931-9c81-ca89f2de9cbf",
+      "name": "Объединить вопрос и embedding",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2432,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; const vector=j.data?.[0]?.embedding;\nif(!vector) throw new Error('OpenAI не вернул embedding');\nreturn [{json:{chatId:j.chatId,query:j.query,vector}}];"
+      },
+      "id": "be254e00-5b4f-4523-98c8-3bd9d1ea75c5",
+      "name": "Подготовить поиск в Qdrant",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/mu_01_12_r4/points/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "YOUR_QDRANT_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { vector: $('Подготовить поиск в Qdrant').item.json.vector, limit: 6, with_payload: true } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "91b06421-93e7-47df-b7e1-efec6cc0e70a",
+      "name": "Найти фрагменты в Qdrant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const base=$('Подготовить поиск в Qdrant').item.json;\nconst hits=r.result||[];\nconst context=hits.map((p,i)=>{const x=p.payload||{}; return `[Фрагмент ${i+1}; страница ${x.page ?? '?'}; документ ${x.document_id||'MU.01.12'}, редакция ${x.revision||4}]\\n${x.text||''}`;}).join('\\n\\n---\\n\\n');\nreturn [{json:{chatId:base.chatId,query:base.query,context,hitCount:hits.length}}];"
+      },
+      "id": "e1257c16-2199-4cd1-906d-0e8cc2e9c999",
+      "name": "Собрать контекст и страницы",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_POLZA_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', temperature: 0.1, max_tokens: 1200, messages: [{ role: 'system', content: 'Ты — инженерный ИИ-ассистент для Ислама, инженера по визуальному и измерительному контролю. Отвечай на русском, ясно и по делу. Основной и единственный нормативный источник для требований — извлечённые фрагменты документа МУ.01.12 редакция 4, переданные в контексте. Не выдумывай нормативы, допуски, размеры, методы, пункты или выводы о соответствии. Если в контексте нет ответа или релевантность слабая, честно скажи, что в доступных фрагментах документа подтверждения нет, и попроси уточнить вопрос/сверить оригинал. Указывай страницу документа в формате «Источник: МУ.01.12, стр. N». Для фото различай наблюдение на изображении и нормативную оценку по документу; не заявляй, что размер измерен по фото без масштаба и калибровки. Если голосовая расшифровка неясна, попроси уточнить. Структура: краткий ответ; затем основание/шаги; затем источник со страницей. Если найденных фрагментов нет, прямо сообщи об этом.' }, { role: 'user', content: 'Вопрос Ислама:\\n' + $('Собрать контекст и страницы').item.json.query + '\\n\\nФрагменты документа из Qdrant (' + $('Собрать контекст и страницы').item.json.hitCount + '):\\n' + ($('Собрать контекст и страницы').item.json.context || '[Qdrant не вернул фрагментов]') } ] } }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "3d14c2a4-ff7b-480b-b276-5327f38e000f",
+      "name": "Ответить по документу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3328,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const base=$('Собрать контекст и страницы').item.json;\nlet answer=(r.choices?.[0]?.message?.content||'Не удалось сформировать ответ. Попробуйте ещё раз.').trim();\nconst max=3500; const parts=[];\nwhile(answer.length>max){ let cut=answer.lastIndexOf('\\n',max); if(cut<max*0.55) cut=max; parts.push(answer.slice(0,cut)); answer=answer.slice(cut).trim(); }\nif(answer) parts.push(answer);\nreturn parts.map(text=>({json:{chatId:base.chatId,text}}));"
+      },
+      "id": "72cc019d-de99-47b2-8539-e78ad649f842",
+      "name": "Подготовить сообщение Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "dfe98235-71da-4985-95d7-61b719f67a94",
+      "name": "Отправить ответ в Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3776,
+        752
+      ],
+      "webhookId": "2a4c5ba8-b854-483f-9fc5-6ffa17c25463",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "1) Добавьте Telegram API credential в Telegram Trigger, «Показать печатает…» и «Отправить ответ».\n2) Замените YOUR_OPENAI_API_KEY в 3 HTTP Request узлах.\n3) Замените YOUR_QDRANT_HOST и YOUR_QDRANT_API_KEY в узле поиска.\n4) В узле «Определить тип сообщения» замените REPLACE_WITH_ISLAM_TELEGRAM_CHAT_ID на chat.id Ислама. По умолчанию доступ закрыт.\n5) Убедитесь, что коллекция mu_01_12_r4 создана workflow №1 с размерностью 1536 и Cosine.\n6) Telegram Trigger должен скачивать вложения (Download=true)."
+      },
+      "id": "7ee23410-fe72-416c-a161-9d75a28d77b1",
+      "name": "ПЕРЕД ВКЛЮЧЕНИЕМ — обязательные настройки",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{$json.fileId}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1312,
+        512
+      ],
+      "id": "a171fcd5-7b22-4c2e-968a-8b2720ccf3c2",
+      "name": "Get a file",
+      "webhookId": "b6e32c16-6b6a-48bc-943d-a41bc01086b1",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "Повторите пожалуйста запрос",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4000,
+        752
+      ],
+      "id": "4364261a-6132-4f00-a999-204724168562",
+      "name": "Send a text message",
+      "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "Повторите пожалуйста запрос",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        304
+      ],
+      "id": "930d55ed-3139-443f-a44d-b1c51f16ceca",
+      "name": "Send a text message1",
+      "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "id": "bd4ff862-de5f-4f0d-b110-11711f587d32",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        400
+      ],
+      "webhookId": "3876e5c2-a11e-49a3-9590-672d5947fe50",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "Повторите пожалуйста запрос",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        608
+      ],
+      "id": "e0190921-dd03-4c40-98db-b2a6581c5b7a",
+      "name": "Send a text message2",
+      "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
+      "credentials": {
+        "telegramApi": {
+          "id": "xLrORzxQsFMcWYWq",
+          "name": "Ассистент ВИК"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Определить тип сообщения": {
+      "main": [
+        [
+          {
+            "node": "Проверить доступ Ислама",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверить доступ Ислама": {
+      "main": [
+        [
+          {
+            "node": "Это текст?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ответ: доступ не настроен",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответ: доступ не настроен": {
+      "main": [
+        [
+          {
+            "node": "Отправить ответ в Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Это текст?": {
+      "main": [
+        [
+          {
+            "node": "Подготовить текстовый вопрос",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Это фото?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить текстовый вопрос": {
+      "main": [
+        [
+          {
+            "node": "Подготовить вопрос к поиску",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Это фото?": {
+      "main": [
+        [
+          {
+            "node": "Подготовить фото для анализа",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Это голосовое?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить фото для анализа": {
+      "main": [
+        [
+          {
+            "node": "Распознать фото (OpenAI Vision)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Распознать фото (OpenAI Vision)": {
+      "main": [
+        [
+          {
+            "node": "Сформировать вопрос по фото",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сформировать вопрос по фото": {
+      "main": [
+        [
+          {
+            "node": "Подготовить вопрос к поиску",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Это голосовое?": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ответ: формат не поддерживается",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расшифровать голосовое": {
+      "main": [
+        [
+          {
+            "node": "Подготовить вопрос из голоса",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить вопрос из голоса": {
+      "main": [
+        [
+          {
+            "node": "Подготовить вопрос к поиску",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответ: формат не поддерживается": {
+      "main": [
+        [
+          {
+            "node": "Отправить ответ в Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить вопрос к поиску": {
+      "main": [
+        [
+          {
+            "node": "Объединить вопрос и embedding",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Векторизовать вопрос",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Векторизовать вопрос": {
+      "main": [
+        [
+          {
+            "node": "Объединить вопрос и embedding",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Объединить вопрос и embedding": {
+      "main": [
+        [
+          {
+            "node": "Подготовить поиск в Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить поиск в Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Найти фрагменты в Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Найти фрагменты в Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Собрать контекст и страницы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Собрать контекст и страницы": {
+      "main": [
+        [
+          {
+            "node": "Ответить по документу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответить по документу": {
+      "main": [
+        [
+          {
+            "node": "Подготовить сообщение Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовить сообщение Telegram": {
+      "main": [
+        [
+          {
+            "node": "Отправить ответ в Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Расшифровать голосовое",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить ответ в Telegram": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Определить тип сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "439a2566-34de-4607-9999-b93c7dba83e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "AHLet6rZyr1rVIU7",
+  "tags": []
+}
