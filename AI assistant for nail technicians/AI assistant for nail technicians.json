@@ -1,0 +1,821 @@
+{
+  "name": "Evelina — AI Agent (FINAL v4.0)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [-3488, 320],
+      "id": "a4c83da9-fa23-40a7-ac5e-f6c72e6c8f69",
+      "name": "Telegram Trigger",
+      "webhookId": "evelina-v4-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.first().json.message || {};\nreturn [{ json: {\n  chatId: m.chat?.id,\n  text: m.text || m.caption || '',\n  voiceFileId: m.voice?.file_id || m.audio?.file_id || null,\n  msgDate: m.date || Math.floor(Date.now()/1000)\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-3264, 320],
+      "id": "fb6d4534-b393-406c-b07b-ad8c64d32fb4",
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.voiceFileId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-3040, 320],
+      "id": "7302ea4c-e7f2-46f7-ad73-a3042e59233b",
+      "name": "Is voice?"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.voiceFileId }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-2816, 224],
+      "id": "a5f0648f-1e23-43cb-9c74-e2698850da54",
+      "name": "Get audio file",
+      "webhookId": "eve-getaudio",
+      "retryOnFail": false,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ru"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [-2592, 320],
+      "id": "bc530263-8d27-4bdc-b733-17ad476fd8aa",
+      "name": "Transcribe audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_POLZA_CREDENTIAL_ID",
+          "name": "Polza ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Normalize input').item.json;\nconst t = $input.first().json.text || '';\nreturn [{ json: { ...b, text: t, isVoice: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2368, 320],
+      "id": "4c537c02-ee8c-4f70-aa28-fc2e72165560",
+      "name": "Prepare voice"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$input.first().json, isVoice: false } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2368, 512],
+      "id": "89e5e79c-14ea-449d-8cc5-58b725dd5e14",
+      "name": "Prepare text"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Normalize input').item.json;\nconst msgDate = new Date(b.msgDate * 1000);\nconst ufa = new Date(msgDate.getTime() + 5 * 60 * 60 * 1000);\n\nconst day = ufa.getUTCDate();\nconst month = ufa.getUTCMonth();\nconst year = ufa.getUTCFullYear();\nconst hours = String(ufa.getUTCHours()).padStart(2, '0');\nconst minutes = String(ufa.getUTCMinutes()).padStart(2, '0');\n\nconst months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];\nconst weekdays = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];\n\nreturn [{\n  json: {\n    todayISO: year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'),\n    todayHuman: day + ' ' + months[month] + ' ' + year,\n    todayWeekday: weekdays[ufa.getUTCDay()],\n    todayTime: hours + ':' + minutes,\n    currentYear: year\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2144, 416],
+      "id": "58d17301-70cc-4b21-b6a7-a492a0038069",
+      "name": "Current Date Info"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-1920, 416],
+      "id": "e90244f5-91a1-4627-8cb3-281a0c902eda",
+      "name": "Read bookings",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(x => x.json);\nconst msg = $('Prepare voice').isExecuted ? $('Prepare voice').first().json : $('Prepare text').first().json;\nconst d = $('Current Date Info').first().json;\nconst todayISO = d.todayISO;\n\nconst active = rows.filter(r => {\n  const status = String(r.status || '').toLowerCase().trim();\n  const date = String(r.date || '').trim();\n  return status === 'active' && date >= todayISO;\n});\n\nconst sorted = active.sort((a, b) => {\n  const da = (a.date || '') + ' ' + (a.time || '');\n  const db = (b.date || '') + ' ' + (b.time || '');\n  return da.localeCompare(db);\n});\n\nconst allActive = sorted.map(r => ({\n  id: String(r.id).trim(),\n  clientName: r.clientName,\n  phone: r.phone || '',\n  date: r.date,\n  time: r.time,\n  status: r.status\n}));\n\nreturn [{\n  json: {\n    chatId: msg.chatId,\n    text: msg.text,\n    todayISO: d.todayISO,\n    todayHuman: d.todayHuman,\n    todayWeekday: d.todayWeekday,\n    todayTime: d.todayTime,\n    currentYear: d.currentYear,\n    bookings: allActive.slice(0, 30),\n    allBookings: allActive\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1696, 416],
+      "id": "c487973b-4ccc-46db-a428-d7341b7f9cd3",
+      "name": "Build context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ message: $('Build context').item.json.text, today: $('Build context').item.json.todayHuman, todayISO: $('Build context').item.json.todayISO, weekday: $('Build context').item.json.todayWeekday, now: $('Build context').item.json.todayTime, year: $('Build context').item.json.currentYear, bookings: $('Build context').item.json.bookings }) }}",
+        "options": {
+          "systemMessage": "Ты — личный AI-администратор мастера маникюра Эвелины. Общайся на русском, тепло, коротко, живо, с эмодзи 🌸💅✨.\n\n═══ ⚠️ ГЛАВНОЕ ПРАВИЛО: КТО Я И КТО ТЫ ═══\n⚠️ Человек, который пишет тебе в Telegram — это ВСЕГДА Эвелина. Твоя хозяйка. Запомни это намертво.\n⚠️ Если увидишь имена «Света», «Олеся» в списке записей (bookings) — это КЛИЕНТЫ. Не путай их с хозяйкой.\n\n═══ ⚠️ БУДЬ ЖИВОЙ И ОБЩИТЕЛЬНОЙ ═══\n- Отвечай КОРОТКО (1–2 предложения, если это не список).\n- НЕ растекайся мыслью. НЕ пиши длинные речи.\n- Обращайся к ней по имени «Эвелина» примерно 2 раза из 3.\n- Чаще спрашивай, как у неё дела, делай комплименты («Ты сегодня отлично выглядишь!», «Спасибо, что ты у меня есть 🌸»).\n- Давай лёгкие напутствия («Пусть день пройдёт легко!», «Хорошего потока клиентов сегодня!»).\n\n═══ ⚠️ ПРИВЕТСТВИЯ ═══\n⚠️ Здоровайся ТОЛЬКО ОДИН РАЗ при ПЕРВОМ сообщении.\n⚠️ Если пишет «Привет» повторно — ответь «Привет ещё раз! 🌸 Как ты?» или «Рада снова видеть, Эвелина! 😊».\nПо полю «now»: 05-11 «Доброе утро! ☀️», 12-16 «Добрый день! 🌸», 17-22 «Добрый вечер! 🌙».\n\n═══ ФОРМАТ ОТВЕТА ═══\nВСЕГДА возвращай СТРОГО JSON без Markdown:\n{\n  \"actions\": [\n    {\"action\":\"create|update|cancel|list\",\"id\":\"\",\"clientName\":\"\",\"phone\":\"\",\"date\":\"YYYY-MM-DD\",\"time\":\"HH:MM\",\"status\":\"active|cancelled\",\"filter\":\"\",\"type\":\"\"}\n  ],\n  \"reply\": \"текст ответа\"\n}\n\n═══ ⚠️ ТЕЛЕФОН ═══\n⚠️ Если Эвелина называет номер телефона клиента — запиши его в поле \"phone\" при создании (action: create).\n⚠️ Если номер не назван — оставь поле \"phone\" пустым (\"\").\n⚠️ Форматируй номер просто цифрами (например, 79991234567), без пробелов и скобок.\n\n═══ ⚠️ СПИСОК И СВОБОДНЫЕ ОКНА ═══\n\n⚠️ ПРАВИЛО №1: Если просят ПОКАЗАТЬ ЗАПИСИ или СВОБОДНЫЕ ОКНА на НЕСКОЛЬКО дат (например, «за 21, 22, 24 октября»):\n❌ НЕ формируй reply!\n✅ Верни МАССИВ действий, по одному на каждую дату:\n{\n  \"actions\": [\n    {\"action\":\"list\",\"filter\":\"2026-10-21\",\"type\":\"busy\"},\n    {\"action\":\"list\",\"filter\":\"2026-10-22\",\"type\":\"busy\"},\n    {\"action\":\"list\",\"filter\":\"2026-10-24\",\"type\":\"busy\"}\n  ],\n  \"reply\": \"\"\n}\n(Если просят ОКНА, то вместо \"busy\" пиши \"free\").\n\n⚠️ ПРАВИЛО №2: Если просят на ОДНУ дату, «завтра», «неделю» или «все»:\n❌ НЕ формируй reply!\n✅ Верни ОДНО действие:\n{\"actions\":[{\"action\":\"list\",\"filter\":\"tomorrow\",\"type\":\"busy\"}],\"reply\":\"\"}\n{\"actions\":[{\"action\":\"list\",\"filter\":\"week\",\"type\":\"busy\"}],\"reply\":\"\"}\n{\"actions\":[{\"action\":\"list\",\"filter\":\"all\",\"type\":\"busy\"}],\"reply\":\"\"}\n{\"actions\":[{\"action\":\"list\",\"filter\":\"2026-10-20\",\"type\":\"busy\"}],\"reply\":\"\"}\n\nreply ОСТАВЬ ПУСТЫМ (\"\").\n\n═══ ⚠️ CANCEL / UPDATE ═══\n⚠️ Для cancel/update НУЖЕН ТОЧНЫЙ id из bookings. НЕ выдумывай!\n⚠️ Если запись не найдена в bookings — пропусти её.\n⚠️ Если несколько: верни action для КАЖДОЙ найденной.\n⚠️ reply должен соответствовать actions:\n- 3 cancel → «Отменила 3 записи 🌸»\n- 1 cancel → «Отменила Регину 🌸»\n- 0 → «Не нашла, уточни 💅»\n⚠️ При переносе (update), если указано ТОЛЬКО время (без даты), бери дату из текущей записи в bookings!\n\n═══ СЦЕНАРИИ ═══\nCREATE: «Записала Оксану на 17 октября 2026 в 11:00 🌸» \nUPDATE: «Перенесла Оксану на 15:00 ✨»\nCANCEL: «Отменила, всё готово 🌸»\n\n═══ ПРАВИЛА ═══\n- ⚠️ Год ВСЕГДА 2026.\n- ⚠️ НЕСКОЛЬКО записей — обрабатывай ВСЕ.\n- Дата не указана → «завтра».\n- Время не указано → «10:00».\n- date=YYYY-MM-DD, time=HH:MM.\n- «в три часа дня» → 15:00, «в полдень» → 12:00.\n- Для create id оставь пустым \"\".\n\n═══ ПРИМЕРЫ ═══\nInput (08:30): «Привет, как дела?»\nOutput: {\"actions\":[],\"reply\":\"Привет, Эвелина! 🌸 У меня всё отлично, готова к работе. Как твоё настроение?\"}\n\nInput: «Запиши Алену на 18 октября в 10:00, номер 89991234567»\nOutput: {\"actions\":[{\"action\":\"create\",\"id\":\"\",\"clientName\":\"Алена\",\"phone\":\"89991234567\",\"date\":\"2026-10-18\",\"time\":\"10:00\",\"status\":\"active\"}],\"reply\":\"Записала Алену на 18 октября в 10:00 🌸 Отличного тебе дня, Эвелина!\"}\n\nInput: «Покажи записи на завтра»\nOutput: {\"actions\":[{\"action\":\"list\",\"filter\":\"tomorrow\",\"type\":\"busy\"}],\"reply\":\"\"}\n\nInput: «Покажи свободные окна на неделю»\nOutput: {\"actions\":[{\"action\":\"list\",\"filter\":\"week\",\"type\":\"free\"}],\"reply\":\"\"}\n\nInput: «Покажи записи за 21, 22 и 24 октября»\nOutput: {\"actions\":[{\"action\":\"list\",\"filter\":\"2026-10-21\",\"type\":\"busy\"},{\"action\":\"list\",\"filter\":\"2026-10-22\",\"type\":\"busy\"},{\"action\":\"list\",\"filter\":\"2026-10-24\",\"type\":\"busy\"}],\"reply\":\"\"}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-1472, 416],
+      "id": "13770234-b4f0-42e9-bc93-af621973ee99",
+      "name": "AI Agent Evelina",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Build context').item.json.chatId }}",
+        "contextWindowLength": 8
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [-1344, 640],
+      "id": "4b1bf703-5b64-46aa-b641-eabec7ce68e1",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($input.first().json.output || '').replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/,'').trim();\nconst c = $('Build context').first().json;\n\nlet parsed;\ntry { parsed = JSON.parse(raw); } catch(e) {\n  parsed = { actions: [], reply: 'Ой, я запуталась 🌸 Повтори, пожалуйста.' };\n}\n\nlet actions = [];\nif (Array.isArray(parsed.actions)) actions = parsed.actions;\nelse if (parsed.action) actions = [parsed];\n\nconst ALLOWED = ['create','update','cancel','list'];\nactions = actions\n  .filter(a => a && ALLOWED.includes(a.action))\n  .map(a => ({\n    action: a.action,\n    id: String(a.id || '').trim(),\n    clientName: String(a.clientName || '').trim(),\n    phone: String(a.phone || '').trim(),\n    date: String(a.date || '').trim(),\n    time: String(a.time || '').trim(),\n    status: a.status || (a.action === 'cancel' ? 'cancelled' : 'active'),\n    filter: String(a.filter || '').trim(),\n    type: String(a.type || 'busy').trim()\n  }));\n\nif (!parsed.reply) parsed.reply = actions.length > 0 ? 'Готово 🌸' : 'Не поняла 🌸';\n\nreturn [{ json: { ...c, actions, reply: parsed.reply } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1120, 320],
+      "id": "f3cc6d33-31b0-4c3f-ab95-07cf4ac55c3c",
+      "name": "Parse command"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.actions.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-896, 320],
+      "id": "1a1257dc-a876-41cd-a7ad-d91d7758a4bb",
+      "name": "Has actions?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-672, 432],
+      "id": "7baaec30-a9f0-4572-80cf-bc67f6b8fff3",
+      "name": "Send reply (only)",
+      "webhookId": "eve-replyonly",
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst actions = input.actions;\nreturn actions.map((a, idx) => ({\n  json: {\n    ...a,\n    chatId: input.chatId,\n    allBookings: input.allBookings || [],\n    __reply: input.reply,\n    __idx: idx,\n    __total: actions.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-672, 192],
+      "id": "f3263d9a-ce02-46bc-9cd1-7b646f9ddb67",
+      "name": "Split actions"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-448, 144],
+      "id": "b9019d31-c265-45cf-a22c-d077bf4b2a8b",
+      "name": "Switch action"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst result = [];\nfor (const item of items) {\n  const x = item.json;\n  if (!x.clientName || !x.date || !x.time) continue;\n  \n  const dateClean = String(x.date).replace(/-/g, '');\n  const timeClean = String(x.time).replace(/:/g, '');\n  const suffix = Math.random().toString(36).slice(2, 6);\n  const uuid = 'EVE-' + dateClean + '-' + timeClean + '-' + suffix;\n  \n  const b = $('Normalize input').item.json;\n  const now = new Date(b.msgDate * 1000).toISOString();\n  \n  result.push({\n    json: {\n      id: uuid, clientName: x.clientName, phone: String(x.phone || ''), date: x.date, time: x.time, status: 'active',\n      createdAt: now, updatedAt: now, __idx: x.__idx, __total: x.__total, __reply: x.__reply, __action: 'create', chatId: x.chatId\n    }\n  });\n}\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-224, 0],
+      "id": "8c45d593-020b-4009-b312-7c7d61f1dd56",
+      "name": "Prepare create"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Nails Bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "clientName": "={{ $json.clientName }}",
+            "phone": "={{ $json.phone }}",
+            "date": "={{ $json.date }}",
+            "time": "={{ $json.time }}",
+            "status": "={{ $json.status }}",
+            "createdAt": "={{ $json.createdAt }}",
+            "updatedAt": "={{ $json.updatedAt }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {"id": "id", "displayName": "id", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "clientName", "displayName": "clientName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "phone", "displayName": "phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "date", "displayName": "date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "time", "displayName": "time", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "createdAt", "displayName": "createdAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "updatedAt", "displayName": "updatedAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false}
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [0, 0],
+      "id": "3dcabe05-f47b-436e-9143-9b4f40bd1618",
+      "name": "Create booking",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => ({\n  json: { __idx: item.json.__idx, __total: item.json.__total, __reply: item.json.__reply, __action: 'create', chatId: item.json.chatId, __done: true }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0],
+      "id": "1600e143-7fc1-4f93-bb2c-4a4caf75fe39",
+      "name": "Create done"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst result = [];\nconst contextBookings = $('Build context').first().json.allBookings || [];\nconst b = $('Normalize input').first().json;\nconst now = new Date(b.msgDate * 1000).toISOString();\n\nfor (const item of items) {\n  const x = item.json;\n  if (!x.id) continue;\n  \n  let booking = contextBookings.find(bk => String(bk.id).trim() === String(x.id).trim());\n  if (!booking && x.clientName) {\n    const cleanName = String(x.clientName).toLowerCase().trim();\n    const cleanDate = x.date || '';\n    booking = contextBookings.find(bk => {\n      const nameMatch = String(bk.clientName || '').toLowerCase().trim() === cleanName;\n      const dateMatch = !cleanDate || String(bk.date) === String(cleanDate);\n      return nameMatch && dateMatch;\n    });\n  }\n  if (!booking) continue;\n  \n  result.push({\n    json: {\n      id: String(booking.id).trim(), clientName: booking.clientName, phone: x.phone || booking.phone || '', date: x.date || booking.date, time: x.time || booking.time,\n      status: x.action === 'cancel' ? 'cancelled' : (x.status || 'active'), updatedAt: now,\n      __idx: x.__idx, __total: x.__total, __reply: x.__reply, __action: x.action, chatId: x.chatId\n    }\n  });\n}\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-224, 192],
+      "id": "358e11ff-d88b-4371-acd3-c6dfac2886ed",
+      "name": "Prepare update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Nails Bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "phone": "={{ $json.phone }}",
+            "date": "={{ $json.date }}",
+            "time": "={{ $json.time }}",
+            "status": "={{ $json.status }}",
+            "updatedAt": "={{ $json.updatedAt }}",
+            "clientName": "={{ $json.clientName }}"
+          },
+          "matchingColumns": ["id"],
+          "schema": [
+            {"id": "id", "displayName": "id", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "clientName", "displayName": "clientName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "phone", "displayName": "phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "date", "displayName": "date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "time", "displayName": "time", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "createdAt", "displayName": "createdAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "updatedAt", "displayName": "updatedAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "row_number", "displayName": "row_number", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true, "readOnly": true, "removed": true}
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [0, 192],
+      "id": "566351f7-f244-40db-b2ff-1cf3a1a9c86d",
+      "name": "Update booking",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => ({\n  json: { __idx: item.json.__idx, __total: item.json.__total, __reply: item.json.__reply, __action: item.json.__action || 'update', chatId: item.json.chatId, __done: true }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 192],
+      "id": "9e93592c-6022-419f-812d-97ff8d1d8a89",
+      "name": "Update done"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Собираем ВСЕ даты из всех действий\nconst allActions = $input.all();\nlet allDates = [];\nlet listType = 'busy';\n\nfor (const action of allActions) {\n  const filter = String(action.json.filter || '');\n  listType = action.json.type || 'busy';\n\n  if (filter.includes(',')) {\n    allDates.push(...filter.split(',').map(d => d.trim()));\n  } else {\n    allDates.push(filter);\n  }\n}\n\n// Убираем дубликаты дат\nallDates = [...new Set(allDates)];\n\n// Если в фильтре 'all' или 'week', обрабатываем как обычно\nconst today = $('Current Date Info').first().json.todayISO;\nconst allBookings = $('Build context').first().json.allBookings || [];\nconst bookings = allBookings.filter(b => String(b.date || '').trim() >= today);\n\nconst schedule = {\n  0: [], 1: [\"09:00\", \"10:30\", \"12:00\", \"13:30\"], 2: [\"09:00\", \"10:30\", \"12:00\", \"13:30\"], 3: [\"09:00\", \"10:30\", \"12:00\", \"13:30\"], 4: [], 5: [\"09:00\", \"10:30\", \"12:00\", \"13:30\"], 6: [\"12:00\", \"13:30\", \"15:00\"]\n};\nconst months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];\n\nlet reply = '';\n\n// Функция для обработки одной даты\nfunction processDate(date, type) {\n  const [y, m, d] = date.split('-');\n  if (!y || !m || !d) return '';\n\n  const dayOfWeek = new Date(date + 'T00:00:00Z').getUTCDay();\n  const workSlots = schedule[dayOfWeek] || [];\n  const dayBookings = bookings.filter(b => String(b.date).trim() === date);\n\n  if (workSlots.length === 0) {\n    return `📅 ${parseInt(d)} ${months[parseInt(m)-1]} — выходной 💅\\n\\n`;\n  }\n\n  if (type === 'busy') {\n    if (dayBookings.length === 0) {\n      return `📅 ${parseInt(d)} ${months[parseInt(m)-1]} — весь день свободен 🌸\\n\\n`;\n    } else {\n      let res = `📅 ${parseInt(d)} ${months[parseInt(m)-1]} ${y}:\\n`;\n      const sorted = dayBookings.sort((a, b) => (a.time || '').localeCompare(b.time || ''));\n      for (const b of sorted) {\n        const phoneStr = b.phone ? ` (${b.phone})` : '';\n        res += `⏰ ${b.time} — ${b.clientName}${phoneStr}\\n`;\n      }\n      return res + '\\n';\n    }\n  } else if (type === 'free') {\n    const busyTimes = dayBookings.map(b => {\n      let t = String(b.time).trim();\n      if (t.length === 4) t = '0' + t; \n      return t;\n    });\n    const freeSlots = workSlots.filter(slot => !busyTimes.includes(slot));\n    if (freeSlots.length === 0) {\n      return `📅 ${parseInt(d)} ${months[parseInt(m)-1]} — всё занято 🈚\\n\\n`;\n    } else {\n      return `📅 ${parseInt(d)} ${months[parseInt(m)-1]} ${y}:\\n🟢 Свободно: ${freeSlots.join(', ')}\\n\\n`;\n    }\n  }\n  return '';\n}\n\nif (allDates.length > 0 && allDates[0] !== 'all' && allDates[0] !== 'week') {\n  // Обрабатываем конкретные даты\n  for (const date of allDates) {\n    reply += processDate(date, listType);\n  }\n} else {\n  // Обработка 'all' или 'week' (упрощенная версия)\n  if (allDates[0] === 'week') {\n    for (let i = 0; i < 7; i++) {\n      const d = new Date(today + 'T00:00:00Z');\n      d.setUTCDate(d.getUTCDate() + i);\n      reply += processDate(d.toISOString().split('T')[0], listType);\n    }\n  } else if (allDates[0] === 'all') {\n    if (bookings.length === 0) {\n      reply = 'У тебя пока нет активных записей 💅';\n    } else {\n      const byDate = {};\n      for (const b of bookings) {\n        const dateKey = String(b.date).trim();\n        if (!byDate[dateKey]) byDate[dateKey] = [];\n        byDate[dateKey].push(b);\n      }\n      for (const date of Object.keys(byDate).sort()) {\n        reply += processDate(date, 'busy');\n      }\n    }\n  }\n}\n\n// Проверяем, что запрос действительно содержит несколько дат, и мы не обрабатывали 'all' или 'week'\nif (!reply.trim()) reply = 'На эти даты записей нет 💅';\n\n// Возвращаем ОДИН ответ, чтобы не дублировать сообщения\nreturn [{ json: { chatId: $('Build context').first().json.chatId, reply: reply.trim() } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 384],
+      "id": "6b7257ba-19a0-471b-af93-68d832c1dab3",
+      "name": "Format list reply"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [448, 176],
+      "id": "7564c90d-e313-4713-b117-65c47957969d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берем данные напрямую из нужных узлов\nconst contextData = $('Build context').first().json;\nconst parseData = $('Parse command').first().json;\n\n// Нам нужно просто найти правильный текст ответа\nlet reply = parseData.reply || 'Готово 🌸';\n\n// Проверяем, не сгенерировал ли текст узел списков или обновлений\n// (используем try/catch на случай, если ветка не выполнялась)\ntry {\n  const formatList = $('Format list reply').first().json;\n  if (formatList && formatList.reply) reply = formatList.reply;\n} catch(e) {}\n\ntry {\n  const updateDone = $('Update done').first().json;\n  if (updateDone && updateDone.__reply) reply = updateDone.__reply;\n} catch(e) {}\n\n// ⚠️ МАГИЯ: Мы не используем $input.all(). \n// Мы жестко возвращаем ровно ОДИН элемент.\nreturn [\n  {\n    json: { \n      chatId: contextData.chatId, \n      reply: reply \n    } \n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 192],
+      "id": "524f10b6-2cf8-431f-b3dc-d2819496137f",
+      "name": "Aggregate reply",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [896, 192],
+      "id": "974b46da-9b5e-414c-b133-4d01b04469e3",
+      "name": "Send reply",
+      "webhookId": "eve-reply-final",
+      "executeOnce": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize input').first().json.chatId }}",
+        "text": "Ой, что-то я задумалась 🌸 Попробуй написать ещё раз через 10 секунд",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-1120, 512],
+      "id": "9811d766-4e5a-4cc0-a077-09921723ca05",
+      "name": "Error handler",
+      "webhookId": "eve-error",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize input').first().json.chatId }}",
+        "text": "Ой, что-то я задумалась 🌸 Попробуй написать ещё раз через 10 секунд",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-2592, 128],
+      "id": "c4623710-b129-4b7c-baef-5220ce6107dd",
+      "name": "Error handler1",
+      "webhookId": "eve-error",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize input').first().json.chatId }}",
+        "text": "Ой, что-то я задумалась 🌸 Попробуй написать ещё раз через 10 секунд",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-448, 432],
+      "id": "142abbd7-fcce-43c0-9e74-583852c7d3e2",
+      "name": "Error handler2",
+      "webhookId": "eve-error",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize input').first().json.chatId }}",
+        "text": "Ой, что-то я задумалась 🌸 Попробуй написать ещё раз через 10 секунд",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 192],
+      "id": "a928f694-9c61-42ce-b9fa-76b354d790cc",
+      "name": "Error handler3",
+      "webhookId": "eve-error",
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [-1472, 640],
+      "id": "3389ddc6-26c9-4706-94e7-fc0d10ba3a62",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_POLZA_CREDENTIAL_ID",
+          "name": "Polza ai"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{"node": "Normalize input", "type": "main", "index": 0}]]
+    },
+    "Normalize input": {
+      "main": [[{"node": "Is voice?", "type": "main", "index": 0}]]
+    },
+    "Is voice?": {
+      "main": [
+        [{"node": "Get audio file", "type": "main", "index": 0}],
+        [{"node": "Prepare text", "type": "main", "index": 0}]
+      ]
+    },
+    "Get audio file": {
+      "main": [
+        [{"node": "Transcribe audio", "type": "main", "index": 0}],
+        [{"node": "Error handler1", "type": "main", "index": 0}]
+      ]
+    },
+    "Transcribe audio": {
+      "main": [[{"node": "Prepare voice", "type": "main", "index": 0}]]
+    },
+    "Prepare voice": {
+      "main": [[{"node": "Current Date Info", "type": "main", "index": 0}]]
+    },
+    "Prepare text": {
+      "main": [[{"node": "Current Date Info", "type": "main", "index": 0}]]
+    },
+    "Current Date Info": {
+      "main": [[{"node": "Read bookings", "type": "main", "index": 0}]]
+    },
+    "Read bookings": {
+      "main": [[{"node": "Build context", "type": "main", "index": 0}]]
+    },
+    "Build context": {
+      "main": [[{"node": "AI Agent Evelina", "type": "main", "index": 0}]]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [[{"node": "AI Agent Evelina", "type": "ai_memory", "index": 0}]]
+    },
+    "AI Agent Evelina": {
+      "main": [
+        [{"node": "Parse command", "type": "main", "index": 0}],
+        [{"node": "Error handler", "type": "main", "index": 0}]
+      ]
+    },
+    "Parse command": {
+      "main": [[{"node": "Has actions?", "type": "main", "index": 0}]]
+    },
+    "Has actions?": {
+      "main": [
+        [{"node": "Split actions", "type": "main", "index": 0}],
+        [{"node": "Send reply (only)", "type": "main", "index": 0}]
+      ]
+    },
+    "Split actions": {
+      "main": [[{"node": "Switch action", "type": "main", "index": 0}]]
+    },
+    "Switch action": {
+      "main": [
+        [{"node": "Prepare create", "type": "main", "index": 0}],
+        [{"node": "Prepare update", "type": "main", "index": 0}],
+        [{"node": "Prepare update", "type": "main", "index": 0}],
+        [{"node": "Format list reply", "type": "main", "index": 0}]
+      ]
+    },
+    "Prepare create": {
+      "main": [[{"node": "Create booking", "type": "main", "index": 0}]]
+    },
+    "Create booking": {
+      "main": [[{"node": "Create done", "type": "main", "index": 0}]]
+    },
+    "Create done": {
+      "main": [[{"node": "Merge", "type": "main", "index": 0}]]
+    },
+    "Prepare update": {
+      "main": [[{"node": "Update booking", "type": "main", "index": 0}]]
+    },
+    "Update booking": {
+      "main": [[{"node": "Update done", "type": "main", "index": 0}]]
+    },
+    "Update done": {
+      "main": [[{"node": "Merge", "type": "main", "index": 1}]]
+    },
+    "Format list reply": {
+      "main": [[{"node": "Merge", "type": "main", "index": 2}]]
+    },
+    "Merge": {
+      "main": [[{"node": "Aggregate reply", "type": "main", "index": 0}]]
+    },
+    "Aggregate reply": {
+      "main": [[{"node": "Send reply", "type": "main", "index": 0}]]
+    },
+    "Send reply (only)": {
+      "main": [[], [{"node": "Error handler2", "type": "main", "index": 0}]]
+    },
+    "Send reply": {
+      "main": [[], [{"node": "Error handler3", "type": "main", "index": 0}]]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [[{"node": "AI Agent Evelina", "type": "ai_languageModel", "index": 0}]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "3e3b8fc0-6dc7-4a77-a78f-c519c43841e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "gYeUySsS2BO9plFL",
+  "tags": []
+}

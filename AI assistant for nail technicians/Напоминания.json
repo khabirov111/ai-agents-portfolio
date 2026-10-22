@@ -1,0 +1,138 @@
+{
+  "name": "Evelina — Напоминания (17:00 по Уфе)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "252cc333-11e5-452d-9596-af42cee3b463",
+      "name": "Every Day 15:00 MSK",
+      "notes": "15:00 МСК = 17:00 по Уфе (Башкирия, UTC+5). n8n TZ = Europe/Moscow."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Считаем «завтра» по Уфе (UTC+5)\n// n8n в Москве (UTC+3), поэтому Уфа = МСК + 2 часа\nconst now = new Date();\nconst msk = new Date(now.getTime() + 3 * 60 * 60 * 1000);\nconst ufa = new Date(msk.getTime() + 2 * 60 * 60 * 1000);\nconst tomorrow = new Date(ufa.getTime() + 24 * 60 * 60 * 1000);\n\nconst day = tomorrow.getUTCDate();\nconst month = tomorrow.getUTCMonth();\nconst year = tomorrow.getUTCFullYear();\n\nconst months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];\n\nreturn [{\n  json: {\n    tomorrowISO: year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'),\n    tomorrowHuman: day + ' ' + months[month] + ' ' + year\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0],
+      "id": "be6569ba-5abe-4132-8c4e-6823edbb4f9d",
+      "name": "Get Tomorrow (Уфа)"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Nails Bookings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "date",
+              "lookupValue": "={{ $json.tomorrowISO }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [448, 0],
+      "id": "55bd112c-0e53-40b0-8cf5-40b48b77e10c",
+      "name": "Get Tomorrow Bookings",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst tomorrowReadable = $('Get Tomorrow (Уфа)').item.json.tomorrowHuman;\n\nlet listText = '📅 Завтра, ' + tomorrowReadable + ':\\n\\n';\nif (items.length === 0) {\n  listText += 'Записей нет. Отдыхай! 🌸';\n} else {\n  for (const item of items) {\n    const phoneStr = item.json.phone ? ` (${item.json.phone})` : '';\n    listText += '⏰ ' + item.json.time + ' — ' + item.json.clientName + phoneStr + '\\n';\n  }\n}\n\nlet templates = '';\nif (items.length > 0) {\n  templates = '\\n\\n---\\n\\n✉️ ШАБЛОНЫ ДЛЯ КЛИЕНТОВ:\\n';\n  for (const item of items) {\n    const phoneStr = item.json.phone ? ` (${item.json.phone})` : '';\n    templates += '\\n👤 ' + item.json.clientName + phoneStr + ' (' + item.json.time + '):\\n';\n    templates += 'Добрый вечер 🌸\\n';\n    templates += 'Жду вас ' + tomorrowReadable + ', ' + item.json.time + '\\n';\n    templates += 'Адрес: Рахимьяна Насырова 4 кВ 93, отдельный вход\\n';\n    templates += 'Оплата наличными 💵.\\n';\n    templates += '---\\n';\n  }\n}\n\nreturn [{ json: { message: listText + templates } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 0],
+      "id": "ce5eebcb-3101-4108-834a-714eaafbd0e2",
+      "name": "Format Reminders"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🔔 НАПОМИНАНИЕ НА ЗАВТРА\n\n{{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [896, 0],
+      "id": "de23edbc-cd3c-40d9-aeb6-1518f57e69e2",
+      "name": "Send Reminder",
+      "webhookId": "eve-rem-17-send",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Evi bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Day 15:00 MSK": {
+      "main": [[{"node": "Get Tomorrow (Уфа)", "type": "main", "index": 0}]]
+    },
+    "Get Tomorrow (Уфа)": {
+      "main": [[{"node": "Get Tomorrow Bookings", "type": "main", "index": 0}]]
+    },
+    "Get Tomorrow Bookings": {
+      "main": [[{"node": "Format Reminders", "type": "main", "index": 0}]]
+    },
+    "Format Reminders": {
+      "main": [[{"node": "Send Reminder", "type": "main", "index": 0}]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "c65cd18f-c567-4020-ac1a-1c87cc0cbbe1",
+  "meta": {
+    "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
+  },
+  "nodeGroups": [],
+  "id": "k9s6ii891og0aJih",
+  "tags": []
+}
