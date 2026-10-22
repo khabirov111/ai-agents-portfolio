@@ -62,7 +62,7 @@
 - **Решение:** AI-агент в Telegram (голос/текст) + ежедневные напоминания с шаблонами.
 - **Стек:** n8n, Polza AI (GPT-4o, Whisper), Google Sheets, Telegram.
 - **Особенность:** строгий JSON-парсинг, учёт часового пояса Уфы.
-- [Подробнее →](./evelina-assistant/)
+- [Подробнее →](./AI%20assistant%20for%20nail%20technicians/)
 
 ### 📊 Навыки
 - **Low-code:** n8n, Apify, Google Sheets
