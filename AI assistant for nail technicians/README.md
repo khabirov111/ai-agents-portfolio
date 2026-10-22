@@ -40,9 +40,3 @@
 ## 📁 Файлы
 - `agent-workflow.json` — workflow диалогового агента.
 - `reminders-workflow.json` — workflow напоминаний.
-
-## ⚠️ Настройка перед запуском
-1. Замени `YOUR_POLZA_API_KEY` на свой ключ.
-2. Замени `YOUR_TELEGRAM_CHAT_ID` на ID Эвелины.
-3. Подключи свой Google Sheets аккаунт.
-4. Настрой Telegram Bot Token в Credentials.
