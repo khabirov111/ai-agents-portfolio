@@ -1,0 +1,1472 @@
+{
+  "name": "Ассистент Умара — Благое дело (ФИНАЛ v6)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -1104,
+        464
+      ],
+      "id": "d8ceb71f-be7f-4510-a65d-b43ddc622e2d",
+      "name": "Telegram Trigger",
+      "webhookId": "umar-v6-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.first().json.message || {};\nconst allowed = ['REDACTED_ALLOWED_CHAT_ID_1', 'REDACTED_ALLOWED_CHAT_ID_2'];\nif (!allowed.includes(String(m.chat?.id))) throw new Error('Доступ запрещен');\nreturn [{ json: {\n  chatId: m.chat?.id,\n  userId: m.from?.id,\n  text: m.text || m.caption || '',\n  voiceFileId: m.voice?.file_id || null,\n  msgDate: m.date || Math.floor(Date.now()/1000)\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        464
+      ],
+      "id": "48bb343a-5bda-4f30-b559-cad5732eaf8e",
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.chatId }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        464
+      ],
+      "id": "ee65849b-6151-44cc-a8bc-a6ecde578d21",
+      "name": "Показать «печатает…»",
+      "webhookId": "65ae965f-03dc-40e9-b1aa-ac1a79435562",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Normalize input').all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        464
+      ],
+      "id": "2b1e6fd6-7875-4484-8f92-f2e649bdb870",
+      "name": "Возврат данных"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.voiceFileId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        464
+      ],
+      "id": "45d595f5-4023-40e1-86dd-3bdd21a109cf",
+      "name": "Is voice?"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.voiceFileId }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        368
+      ],
+      "id": "83fccc1d-c135-45e3-9bdf-829ddde5310b",
+      "name": "Get audio file",
+      "webhookId": "dc54864f-f0bf-4364-9376-ab66547d6769",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ru"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        240,
+        368
+      ],
+      "id": "79e8c5d2-8ff5-4a28-b57b-75746271dd62",
+      "name": "Transcribe audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_OPENAI_CRED_ID",
+          "name": "REDACTED_OPENAI_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Normalize input').item.json;\nconst t = $input.first().json.text || '';\nreturn [{ json: { ...b, text: t, isVoice: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        368
+      ],
+      "id": "c4ea78be-5cec-4fbe-a069-4211347fd280",
+      "name": "Prepare voice"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$input.first().json, isVoice: false } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        560
+      ],
+      "id": "a3c3704a-098d-4785-a049-59791369d8b8",
+      "name": "Prepare text"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Normalize input').item.json;\nconst msgDate = new Date(b.msgDate * 1000);\nconst ufa = new Date(msgDate.getTime() + 5 * 60 * 60 * 1000);\nconst day = ufa.getUTCDate();\nconst month = ufa.getUTCMonth();\nconst year = ufa.getUTCFullYear();\nconst hours = String(ufa.getUTCHours()).padStart(2, '0');\nconst minutes = String(ufa.getUTCMinutes()).padStart(2, '0');\nconst months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];\nconst weekdays = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];\nreturn [{\n  json: {\n    todayISO: year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0'),\n    todayHuman: day + ' ' + months[month] + ' ' + year,\n    todayWeekday: weekdays[ufa.getUTCDay()],\n    todayTime: hours + ':' + minutes,\n    currentYear: year\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        464
+      ],
+      "id": "74f7fe02-7a3a-44d2-a044-4f21d089dc09",
+      "name": "Current Date Info"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REDACTED_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SPREADSHEET_NAME",
+          "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Учет",
+          "cachedResultUrl": "REDACTED_SHEET_URL"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        464
+      ],
+      "id": "b4c9207f-7400-4014-b4ec-fd24b02bf249",
+      "name": "Read bookings",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED_GSHEETS_CRED_ID",
+          "name": "REDACTED_GSHEETS_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(x => x.json);\nlet msg = { chatId: 'REDACTED_FALLBACK_CHAT_ID', text: '' };\ntry {\n  if ($('Prepare voice').isExecuted) msg = $('Prepare voice').first().json;\n  else if ($('Prepare text').isExecuted) msg = $('Prepare text').first().json;\n} catch (e) {}\nconst d = $('Current Date Info').first().json;\n\n// Передаем ВСЕ задачи агенту, но помечаем их статус\nreturn [{\n  json: {\n    chatId: msg.chatId,\n    userId: msg.userId,\n    text: msg.text,\n    isVoice: msg.isVoice || false,\n    todayISO: d.todayISO,\n    todayHuman: d.todayHuman,\n    todayWeekday: d.todayWeekday,\n    todayTime: d.todayTime,\n    currentYear: d.currentYear,\n    bookings: rows // <-- все строки\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        464
+      ],
+      "id": "1883e499-e07b-4db0-b8c7-4ef8ff382cd1",
+      "name": "Build context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ message: $('Build context').item.json.text, today: $('Build context').item.json.todayHuman, todayISO: $('Build context').item.json.todayISO, weekday: $('Build context').item.json.todayWeekday, now: $('Build context').item.json.todayTime, year: $('Build context').item.json.currentYear, bookings: $('Build context').item.json.bookings }) }}",
+        "options": {
+          "systemMessage": "=Ты — личный ИИ-ассистент Умара, руководителя благотворительного фонда «Благое дело» (г. Октябрьский, Башкортостан).\n\nТОН И СТИЛЬ:\n- Исламский, уважительный, тёплый. Начинай с «🌙 Ассаляму алейкум, уважаемый Умар» или «✨ БаракаЛлаху фик».\n- Заканчивай дуа: «🤲 Пусть Аллах примет ваши благие дела» или «ИншаАллах 🌿».\n- Хвали за работу: «🌟 МашаАллах, отличный результат!» или «💚 БаракаЛлаху фик, вы делаете огромное дело».\n- Будь общительным, но по делу. Используй смайлики для красоты, но не перегружай.\n\nВРЕМЯ И ДАТА:\n- Сегодняшняя дата и время: {{ $('Build context').item.json.todayISO }} (Екатеринбург, UTC+5).\n- Всегда используй ТОЛЬКО эту текущую дату.\n\nУЧЁТ (Google Sheets, лист «Учет»):\n- Колонки: ID | Дата | Тип | Категория | Сумма | Описание | Статус.\n- В колонку ID всегда записывай уникальный номер (например, текущее время ГГГГММДДЧЧММ).\n- Категории: Закят, Садака, Проект Чишмэ, Обеды, Аренда, ГСМ, Помощь сиротам, Адресная помощь, Задача, Прочее.\n\nПРАВИЛА ДЕЙСТВИЙ:\n1. Добавить запись/задачу/доход — action: \"create\". Если задач несколько, верни несколько объектов в массиве actions.\n2. Отменить/Закрыть/Удалить — action: \"update\" и status: \"Закрыто\". ❌ ФИЗИЧЕСКИ НЕ УДАЛЯЙ!\n3. Изменить (время, сумму, описание) — action: \"update\" и status: \"Открыто\" (не закрывай задачу).\n\nПРАВИЛА ФИЛЬТРАЦИИ ПРИ ЗАПРОСЕ СПИСКА (action: \"list\"):\n- Если Умар просит: «какие у меня задачи», «покажи открытые», «что на завтра» → ставь filter: \"open\".\n- Если Умар просит: «покажи закрытые», «что мы выполнили», «что отменили» → ставь filter: \"closed\".\n- Если Умар просит: «покажи всё», «все задачи» → ставь filter: \"all\".\n- Если Умар просит на конкретную дату (например, «на 25 октября») → ставь filter: \"date=YYYY-MM-DD\".\n\nПРАВИЛА ОФОРМЛЕНИЯ ОТВЕТА (КРАСОТА И ЧИТАЕМОСТЬ):\n- ВСЕГДА добавляй пустую строку (\\n\\n) между заголовком и списком, а также перед финальным дуа.\n- Для каждой задачи используй смайлики:\n  * 📌 — для открытой задачи (если статус \"Открыто\")\n  * ✅ — для закрытой задачи (если статус \"Закрыто\")\n  * 💰 — если это доход/деньги\n  * 🤝 — если это помощь кому-то\n- Если в задаче есть время, выделяй его: «📌 Встреча с Ренатом в *13:13*».\n- Если Сумма = 0, НЕ упоминай её.\n- Если Сумма > 0, пиши: «(Сумма: X руб.)».\n- НИКОГДА не пиши длинные ID (цифры). Пиши просто: «Задача добавлена ✅», «Задача изменена ✏️».\n- В конце ответа ВСЕГДА добавляй: «🤲 Пусть Аллах облегчит твои дела и дарует баракат!»\n\nПРИМЕР КРАСИВОГО ОТВЕТА:\n🌙 Ассаляму алейкум, Умар!\n\n📅 *Твои задачи на завтра:*\n\n1. 📌 Встреча с Ренатом в *13:13*\n2. 📌 Встретиться с Юлей в *15:30*\n3. 💰 Деньги для фонда (Сумма: 350000 руб.)\n\n🤲 Пусть Аллах облегчит твои дела и дарует баракат!\n\nФОРМАТ ОТВЕТА (СТРОГО JSON):\n{\n  \"actions\": [\n    {\"action\":\"create|update|list\",\"id\":\"\",\"date\":\"YYYY-MM-DD\",\"type\":\"Доход|Расход|Помощь|Задача\",\"category\":\"\",\"amount\":0,\"description\":\"\",\"status\":\"Открыто|Закрыто\",\"filter\":\"\"}\n  ],\n  \"reply\": \"текст ответа с эмодзи и переносами строк \\\\n\"\n}\n\nВАЖНО:\n- НИКОГДА не выдумывай ID. Бери только из списка bookings.\n- Если не уверен — используй поле description для поиска по описанию."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1360,
+        464
+      ],
+      "id": "db8990ea-dc58-44fb-a8e6-9f8d0096a529",
+      "name": "AI Agent Umar"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Build context').item.json.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1504,
+        688
+      ],
+      "id": "95344e8c-fe4a-443a-b248-1a93ccdc7e15",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1376,
+        688
+      ],
+      "id": "bdcfc9f9-b884-40c9-8c5b-42ef4f80e126",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED_OPENAI_CRED_ID",
+          "name": "REDACTED_OPENAI_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = String($input.first().json.output || '').trim();\n\n// Если ответ не начинается с { - значит агент написал просто текст, оборачиваем в JSON\nif (!raw.startsWith('{')) {\n  raw = JSON.stringify({ actions: [], reply: raw });\n}\n\nconst c = $('Build context').first().json;\nlet parsed;\n\ntry { \n  parsed = JSON.parse(raw); \n} catch(e) { \n  parsed = { actions: [], reply: 'Ой, я запутался. Повтори, пожалуйста.' }; \n}\n\nlet actions = Array.isArray(parsed.actions) ? parsed.actions : (parsed.action ? [parsed] : []);\nconst ALLOWED = ['create','update','list'];\n\nactions = actions.filter(a => a && ALLOWED.includes(a.action)).map(a => ({\n  action: a.action, \n  id: String(a.id || '').trim(), \n  date: String(a.date || '').trim(),\n  type: String(a.type || '').trim(), \n  category: String(a.category || '').trim(),\n  amount: Number(a.amount || 0), \n  description: String(a.description || '').trim(),\n  status: a.status || (a.action === 'update' ? 'Закрыто' : 'Открыто'), \n  filter: String(a.filter || '').trim()\n}));\n\nif (!parsed.reply) {\n  parsed.reply = actions.length > 0 ? 'Готово, Умар!' : 'Не понял запрос.';\n}\n\nreturn [{ json: { ...c, actions, reply: parsed.reply } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        464
+      ],
+      "id": "6a23deca-c644-4789-a4ee-1c98fd69b149",
+      "name": "Parse command"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.actions.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        464
+      ],
+      "id": "f2bbba6a-d44a-4f2c-b477-59d661080368",
+      "name": "Has actions?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isVoice }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        624
+      ],
+      "id": "836487d4-5ddb-439b-b7fe-de9679b4f78e",
+      "name": "Ответить голосом?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply.replace(/^/, '🌙 ').replace(/\\n/g, '\\n\\n').replace(/Позвонить/g, '📞 Позвонить').replace(/Доход/g, '💰 Доход').replace(/Отменена/g, '❌ Отменена').replace(/Изменена/g, '✏️ Изменена').replace(/Добавлена/g, '✅ Добавлена') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2384,
+        720
+      ],
+      "id": "43b03446-0259-4e0d-b770-028b46940cc6",
+      "name": "Send reply (only)",
+      "webhookId": "72bb0db7-697e-426d-a60e-fba6549e34ea",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn input.actions.map((a, idx) => ({\n  json: { ...a, chatId: input.chatId, userId: input.userId, isVoice: input.isVoice, __reply: input.reply, __idx: idx, __total: input.actions.length }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        192
+      ],
+      "id": "61e9e661-dfd6-4ed4-af80-a309fdc0b421",
+      "name": "Split actions"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2384,
+        160
+      ],
+      "id": "88d5b66f-896b-4583-af28-c9d3fc196fb7",
+      "name": "Switch action"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(x => {\n  const d = x.json;\n  const dateClean = String(d.date || '').replace(/-/g, '');\n  const suffix = Math.random().toString(36).slice(2, 6);\n  return { json: { ID: 'UMR-' + dateClean + '-' + suffix, 'Дата': d.date, 'Тип': d.type, 'Категория': d.category, 'Сумма': d.amount, 'Описание': d.description, 'Статус': d.status, __idx: d.__idx, __total: d.__total, __reply: d.__reply, __action: 'create', chatId: d.chatId, userId: d.userId, isVoice: d.isVoice } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        0
+      ],
+      "id": "2f68a837-6283-419b-a3dc-88a0a76c877b",
+      "name": "Prepare create"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REDACTED_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SPREADSHEET_NAME",
+          "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Учет",
+          "cachedResultUrl": "REDACTED_SHEET_URL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.ID }}",
+            "Дата": "={{ $json['Дата'] }}",
+            "Тип": "={{ $json['Тип'] }}",
+            "Категория": "={{ $json['Категория'] }}",
+            "Сумма": "={{ $json['Сумма'] }}",
+            "Описание": "={{ $json['Описание'] }}",
+            "Статус": "={{ $json['Статус'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Дата",
+              "displayName": "Дата",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Тип",
+              "displayName": "Тип",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Категория",
+              "displayName": "Категория",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Сумма",
+              "displayName": "Сумма",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Описание",
+              "displayName": "Описание",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Статус",
+              "displayName": "Статус",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2832,
+        0
+      ],
+      "id": "aff72629-b4d2-4013-b9c0-423d3c520df1",
+      "name": "Create booking",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED_GSHEETS_CRED_ID",
+          "name": "REDACTED_GSHEETS_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(x => ({ json: { __idx: x.json.__idx, __total: x.json.__total, __reply: x.json.__reply, __action: 'create', chatId: x.json.chatId, userId: x.json.userId, isVoice: x.json.isVoice } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3056,
+        0
+      ],
+      "id": "fd637be3-504f-496f-b5f0-ceaacbaf8c3d",
+      "name": "Create done"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst ctx = $('Build context').first().json.bookings || [];\nconst result = [];\nfor (const item of items) {\n  const x = item.json;\n  let booking = ctx.find(bk => String(bk['ID'] || '').trim() === String(x.id).trim());\n  if (!booking && x.description) {\n    const s = String(x.description).toLowerCase();\n    booking = ctx.find(bk => String(bk['Описание'] || '').toLowerCase().includes(s));\n  }\n  if (!booking) continue;\n  \n  // Если агент явно сказал \"Открыто\" - оставляем, иначе \"Закрыто\"\n  const newStatus = (x.status === 'Открыто') ? 'Открыто' : 'Закрыто';\n\n  result.push({ json: {\n    ID: String(booking['ID']).trim(),\n    'Дата': x.date || booking['Дата'],\n    'Тип': x.type || booking['Тип'],\n    'Категория': x.category || booking['Категория'],\n    'Сумма': x.amount ? x.amount : booking['Сумма'],\n    'Описание': x.description || booking['Описание'],\n    'Статус': newStatus,\n    __idx: x.__idx, __total: x.__total, __reply: x.__reply, __action: 'update', chatId: x.chatId, userId: x.userId, isVoice: x.isVoice\n  } });\n}\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        192
+      ],
+      "id": "f11d0ce4-82e7-42f2-b636-336c3249aed5",
+      "name": "Prepare update"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "REDACTED_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SPREADSHEET_NAME",
+          "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Учет",
+          "cachedResultUrl": "REDACTED_SHEET_URL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.ID }}",
+            "Дата": "={{ $json['Дата'] }}",
+            "Тип": "={{ $json['Тип'] }}",
+            "Категория": "={{ $json['Категория'] }}",
+            "Сумма": "={{ $json['Сумма'] }}",
+            "Описание": "={{ $json['Описание'] }}",
+            "Статус": "={{ $json['Статус'] }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Дата",
+              "displayName": "Дата",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Тип",
+              "displayName": "Тип",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Категория",
+              "displayName": "Категория",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Сумма",
+              "displayName": "Сумма",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Описание",
+              "displayName": "Описание",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Статус",
+              "displayName": "Статус",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2832,
+        192
+      ],
+      "id": "472f1449-c876-4303-88ba-f89ac80d2663",
+      "name": "Update booking",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED_GSHEETS_CRED_ID",
+          "name": "REDACTED_GSHEETS_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(x => ({ json: { __idx: x.json.__idx, __total: x.json.__total, __reply: x.json.__reply, __action: 'update', chatId: x.json.chatId, userId: x.json.userId, isVoice: x.json.isVoice } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3056,
+        192
+      ],
+      "id": "e647ef59-a9fb-4c45-9ab0-0a0543dbd23d",
+      "name": "Update done"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allActions = $input.all();\nconst contextBookings = $('Build context').first().json.bookings || [];\nlet reply = '';\n\nfor (const action of allActions) {\n  const filter = String(action.json.filter || '').toLowerCase().trim();\n  let filteredBookings = contextBookings;\n\n  if (filter.startsWith('date=')) {\n    const targetDate = filter.replace('date=', '').trim();\n    filteredBookings = contextBookings.filter(b => String(b['Дата']).trim() === targetDate);\n  } else if (filter === 'open') {\n    filteredBookings = contextBookings.filter(b => String(b['Статус']).trim() === 'Открыто');\n  } else if (filter === 'closed') {\n    filteredBookings = contextBookings.filter(b => String(b['Статус']).trim() === 'Закрыто');\n  } else if (filter === 'all') {\n    filteredBookings = contextBookings;\n  }\n\n  if (filteredBookings.length === 0) {\n    reply += 'Задач не найдено.\\\\n';\n  } else {\n    reply += 'Ваши задачи:\\\\n';\n    filteredBookings.forEach((b, i) => {\n      const sum = Number(b['Сумма']) || 0;\n      const sumStr = sum > 0 ? ` (Сумма: ${sum})` : '';\n      const statusIcon = String(b['Статус']).trim() === 'Закрыто' ? '✅' : '📌';\n      reply += `${i+1}. ${statusIcon} [${b['Дата']}] ${b['Тип']}: ${b['Описание']}${sumStr}\\\\n`;\n    });\n  }\n}\n\nif (!reply.trim()) reply = $('Parse command').first().json.reply || 'Задач нет.';\nreturn [{ json: { chatId: $('Build context').first().json.chatId, reply: reply.trim(), isVoice: $('Build context').first().json.isVoice, userId: $('Build context').first().json.userId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3056,
+        384
+      ],
+      "id": "364c8c95-0e65-4551-b6ce-719f111e1fa9",
+      "name": "Format list reply"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        3280,
+        144
+      ],
+      "id": "6fef3899-8b7f-4038-b1a2-569c26af240c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Build context').first().json;\nconst p = $('Parse command').first().json;\nlet reply = p.reply || 'Готово!';\ntry { const f = $('Format list reply').first().json; if (f && f.reply) reply = f.reply; } catch(e) {}\ntry { const u = $('Update done').first().json; if (u && u.__reply) reply = u.__reply; } catch(e) {}\nreturn [{ json: { chatId: ctx.chatId, userId: ctx.userId, reply: reply, isVoice: ctx.isVoice } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3504,
+        160
+      ],
+      "id": "81bf928f-2551-4eda-8450-98c490604a5c",
+      "name": "Aggregate reply"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isVoice }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3728,
+        160
+      ],
+      "id": "14058e37-cde4-442d-b8e8-b4039a270a57",
+      "name": "Ответить голосом? (final)"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply.replace(/^/, '🌙 ').replace(/\\n/g, '\\n\\n').replace(/Встреча с/g, '📌 Встреча с').replace(/Позвонить/g, '📞 Позвонить').replace(/Доход/g, '💰 Доход').replace(/Отменена/g, '❌ Отменена').replace(/Изменена/g, '✏️ Изменена').replace(/Добавлена/g, '✅ Добавлена') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3952,
+        288
+      ],
+      "id": "5e5c0b99-8881-4a68-a266-1ebee4f41acb",
+      "name": "Send text (final)",
+      "webhookId": "5fe42528-48ad-4cc8-95b8-367677bdb8fa",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Ответить голосом?').item.json.chatId }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "id": "4c84aa2c-e976-49f9-aa8f-e926e5c31b5a",
+      "name": "Отправить голос",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2832,
+        528
+      ],
+      "webhookId": "send-voice-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берем длинную строку Base64 из поля audio\nconst base64Data = $input.first().json.audio;\n\n// Превращаем её в настоящий бинарный файл для n8n\nconst binaryData = Buffer.from(base64Data, 'base64');\n\nreturn [{\n  json: {},\n  binary: {\n    data: {\n      data: binaryData.toString('base64'),\n      mimeType: 'audio/mpeg',\n      fileName: 'ai Umar.mp3'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        528
+      ],
+      "id": "f52faa9d-706f-4a0f-be2d-6092d833bee4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/audio/speech",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-3.8-flash-lite-tts\",\n  \"voice\": \"Charon\",\n  \"input\": \"{{ $json.reply.replace(/\\n/g, ' ').slice(0, 4000) }}\",\n  \"response_format\": \"mp3\"\n}",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "07d03557-7769-4d9f-b9a5-ddc191107b52",
+      "name": "OpenAI TTS1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2384,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://polza.ai/api/v1/audio/speech",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-3.8-flash-lite-tts\",\n  \"voice\": \"Charon\",\n  \"input\": \"{{ $json.reply.replace(/\\n/g, ' ').slice(0, 4000) }}\",\n  \"response_format\": \"mp3\"\n}",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "a42c7161-a696-4de2-9442-25dd1bd057ef",
+      "name": "OpenAI TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3984,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Ответить голосом? (final)').item.json.chatId }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "id": "1e003463-bdc3-47e4-820a-af591f99a8e6",
+      "name": "Отправить голос1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4432,
+        -80
+      ],
+      "webhookId": "send-voice-webhook",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берем длинную строку Base64 из поля audio\nconst base64Data = $input.first().json.audio;\n\n// Превращаем её в настоящий бинарный файл для n8n\nconst binaryData = Buffer.from(base64Data, 'base64');\n\nreturn [{\n  json: {},\n  binary: {\n    data: {\n      data: binaryData.toString('base64'),\n      mimeType: 'audio/mpeg',\n      fileName: 'ai Umar.mp3'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4208,
+        -80
+      ],
+      "id": "dc90fbd4-1766-4259-9aaf-493b685dbf4e",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "Показать «печатает…»",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Показать «печатает…»": {
+      "main": [
+        [
+          {
+            "node": "Возврат данных",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Возврат данных": {
+      "main": [
+        [
+          {
+            "node": "Is voice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is voice?": {
+      "main": [
+        [
+          {
+            "node": "Get audio file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get audio file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe audio": {
+      "main": [
+        [
+          {
+            "node": "Prepare voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare voice": {
+      "main": [
+        [
+          {
+            "node": "Current Date Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare text": {
+      "main": [
+        [
+          {
+            "node": "Current Date Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Current Date Info": {
+      "main": [
+        [
+          {
+            "node": "Read bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read bookings": {
+      "main": [
+        [
+          {
+            "node": "Build context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build context": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Umar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Umar",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Umar",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Umar": {
+      "main": [
+        [
+          {
+            "node": "Parse command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse command": {
+      "main": [
+        [
+          {
+            "node": "Has actions?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has actions?": {
+      "main": [
+        [
+          {
+            "node": "Split actions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ответить голосом?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответить голосом?": {
+      "main": [
+        [
+          {
+            "node": "OpenAI TTS1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send reply (only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split actions": {
+      "main": [
+        [
+          {
+            "node": "Switch action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch action": {
+      "main": [
+        [
+          {
+            "node": "Prepare create",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format list reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare create": {
+      "main": [
+        [
+          {
+            "node": "Create booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create booking": {
+      "main": [
+        [
+          {
+            "node": "Create done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create done": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare update": {
+      "main": [
+        [
+          {
+            "node": "Update booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update booking": {
+      "main": [
+        [
+          {
+            "node": "Update done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update done": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format list reply": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate reply": {
+      "main": [
+        [
+          {
+            "node": "Ответить голосом? (final)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ответить голосом? (final)": {
+      "main": [
+        [
+          {
+            "node": "OpenAI TTS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send text (final)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Отправить голос",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI TTS1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI TTS": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Отправить голос1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REDACTED_VERSION_ID",
+  "meta": {
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "REDACTED_WORKFLOW_ID",
+  "tags": []
+}

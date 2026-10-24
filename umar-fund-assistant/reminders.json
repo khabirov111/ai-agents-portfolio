@@ -1,0 +1,268 @@
+{
+  "name": "Ассистент Умара — Напоминания (v2)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c2c9d826-4823-4596-b02d-5157770ffa33",
+      "name": "Cron Daily 20:00"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REDACTED_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SPREADSHEET_NAME",
+          "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Учет",
+          "cachedResultUrl": "REDACTED_SHEET_URL"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d8598c04-7792-49eb-8d27-602bff829dc2",
+      "name": "Read bookings",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED_GSHEETS_CRED_ID",
+          "name": "REDACTED_GSHEETS_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(x => x.json);\nconst chatId = 'REDACTED_TELEGRAM_CHAT_ID'; // ID Умара\n\n// Вычисляем ЗАВТРАШНЮЮ дату (с учетом часового пояса Екатеринбурга +5)\nconst now = new Date();\nconst ufaNow = new Date(now.getTime() + 5 * 60 * 60 * 1000);\nconst tomorrow = new Date(ufaNow);\ntomorrow.setUTCDate(tomorrow.getUTCDate() + 1);\nconst tomorrowISO = tomorrow.toISOString().split('T')[0];\n\nconst tomorrowTasks = rows.filter(b => String(b['Дата'] || '').trim() === tomorrowISO && String(b['Статус']).trim() === 'Открыто');\n\nlet text = '🌙 Ассаляму алейкум, Умар!\\\\n\\\\n';\ntext += '📅 *Твои задачи на завтра:*\\\\n';\n\nif (tomorrowTasks.length === 0) {\n  text += '☕ На завтра задач нет. Отдыхай, иншаАллах.';\n} else {\n  tomorrowTasks.forEach((b, i) => {\n    const sum = Number(b['Сумма']) || 0;\n    const sumStr = sum > 0 ? ` (Сумма: ${sum} руб.)` : '';\n    text += `\\\\n${i+1}. 📌 ${b['Описание']}${sumStr}`;\n  });\n}\n\ntext += '\\\\n\\\\n🤲 Пусть Аллах облегчит твои дела!';\n\nreturn [{ json: { chatId, text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "7ef67463-b0ff-47bf-84e8-48c93f942cec",
+      "name": "Prepare daily digest"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text.replace(/\\\\n/g, '\\n') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "5f38518b-9d90-42a4-97ed-ad79e8437c33",
+      "name": "Send daily digest",
+      "webhookId": "34085010-687e-4fc0-95b9-48decfadd8f7",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * 0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "b0d65dcc-0a9c-4955-ba14-8dfa7b8cbed4",
+      "name": "Cron Weekly Sun 20:00"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REDACTED_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REDACTED_SPREADSHEET_NAME",
+          "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Учет",
+          "cachedResultUrl": "REDACTED_SHEET_URL"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        208
+      ],
+      "id": "8414980b-8445-4832-9437-361d5098d122",
+      "name": "Read bookings (weekly)",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED_GSHEETS_CRED_ID",
+          "name": "REDACTED_GSHEETS_CRED_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(x => x.json);\nconst chatId = 'REDACTED_TELEGRAM_CHAT_ID'; // ID Умара\n\n// Настройки дат для недели\nconst now = new Date();\nconst ufaNow = new Date(now.getTime() + 5 * 60 * 60 * 1000);\nconst weekAgo = new Date(ufaNow);\nweekAgo.setUTCDate(weekAgo.getUTCDate() - 7);\nconst weekAgoISO = weekAgo.toISOString().split('T')[0];\nconst todayISO = ufaNow.toISOString().split('T')[0];\nconst nextWeek = new Date(ufaNow);\nnextWeek.setUTCDate(nextWeek.getUTCDate() + 7);\nconst nextWeekISO = nextWeek.toISOString().split('T')[0];\n\nlet completedThisWeek = [];\nlet tasksNextWeek = [];\nlet totalIncome = 0;\nlet totalExpense = 0;\nlet categoriesExpense = {};\nlet incomeSources = {};\n\n// Берем ТОЛЬКО активные записи для расчетов\nconst activeRows = rows.filter(b => String(b['Статус'] || '').trim() === 'Открыто');\n\nfor (const b of activeRows) {\n  const date = String(b['Дата'] || '').trim();\n  const type = String(b['Тип'] || '').trim();\n  const amount = Number(b['Сумма']) || 0;\n  const category = String(b['Категория'] || 'Прочее').trim();\n  const desc = String(b['Описание'] || 'Без описания').trim();\n\n  // 1. Задачи на следующую неделю\n  if (date > todayISO && date <= nextWeekISO && type === 'Задача') {\n    tasksNextWeek.push(`[${date}] ${desc}`);\n  }\n\n  // 2. Деньги (только активные)\n  if (date >= weekAgoISO && date <= todayISO) {\n    if (type === 'Доход' && amount > 0) {\n      totalIncome += amount;\n      const source = desc.replace(/[0-9]/g, '').trim();\n      incomeSources[source] = (incomeSources[source] || 0) + amount;\n    }\n    if (type === 'Расход' && amount > 0) {\n      totalExpense += amount;\n      categoriesExpense[category] = (categoriesExpense[category] || 0) + amount;\n    }\n  }\n}\n\n// Баланс фонда (все активные Доходы минус все активные Расходы)\nlet totalFund = 0;\nfor (const b of activeRows) {\n  const type = String(b['Тип'] || '').trim();\n  const amount = Number(b['Сумма']) || 0;\n  if (type === 'Доход') totalFund += amount;\n  if (type === 'Расход') totalFund -= amount;\n}\n\n// Выполненные задачи за неделю (закрытые)\nconst closedThisWeek = rows.filter(b => {\n  const date = String(b['Дата'] || '').trim();\n  return String(b['Статус']).trim() === 'Закрыто' && date >= weekAgoISO && date <= todayISO && String(b['Тип']).trim() === 'Задача';\n});\n\n// Формируем красивый текст\nlet text = 'Ассаляму алейкум, Умар! Отчет за неделю:\\n\\n';\ntext += `✅ Выполнено задач: ${closedThisWeek.length}\\n`;\nif (closedThisWeek.length > 0) closedThisWeek.forEach(t => text += `   - ${t['Описание']}\\n`);\ntext += '\\n';\n\ntext += `📅 Задачи на след. неделю (${tasksNextWeek.length}):\\n`;\nif (tasksNextWeek.length > 0) tasksNextWeek.forEach(t => text += `   - ${t}\\n`);\nelse text += '   - Задач нет\\n';\ntext += '\\n';\n\ntext += `💰 В фонде сейчас (активные): ${totalFund} руб.\\n`;\ntext += `📥 Пришло за неделю: ${totalIncome} руб.\\n`;\nfor (const [source, amt] of Object.entries(incomeSources)) {\n  text += `   - От: ${source} — ${amt} руб.\\n`;\n}\n\ntext += `📤 Ушло за неделю: ${totalExpense} руб.\\n`;\nfor (const [cat, amt] of Object.entries(categoriesExpense)) {\n  text += `   - ${cat}: ${amt} руб.\\n`;\n}\n\ntext += '\\nПусть Аллах примет ваши благие дела и дарует баракат!';\nreturn [{ json: { chatId, text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        208
+      ],
+      "id": "9bbd2fb2-1ffa-4397-bf35-797f6139f056",
+      "name": "Prepare weekly digest"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        208
+      ],
+      "id": "c5f84616-b585-4035-8b0d-f56f9c2a5d59",
+      "name": "Send weekly digest",
+      "webhookId": "2b8b9d1f-0890-4822-8d83-6d5cd8ad799d",
+      "credentials": {
+        "telegramApi": {
+          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "name": "REDACTED_TELEGRAM_CRED_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cron Daily 20:00": {
+      "main": [
+        [
+          {
+            "node": "Read bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read bookings": {
+      "main": [
+        [
+          {
+            "node": "Prepare daily digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare daily digest": {
+      "main": [
+        [
+          {
+            "node": "Send daily digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron Weekly Sun 20:00": {
+      "main": [
+        [
+          {
+            "node": "Read bookings (weekly)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read bookings (weekly)": {
+      "main": [
+        [
+          {
+            "node": "Prepare weekly digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare weekly digest": {
+      "main": [
+        [
+          {
+            "node": "Send weekly digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REDACTED_VERSION_ID",
+  "meta": {
+    "instanceId": "REDACTED_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "REDACTED_WORKFLOW_ID",
+  "tags": []
+}
