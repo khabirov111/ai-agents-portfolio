@@ -1,4 +1,4 @@
-// ===== Месячный дайджест Langame (отчёт «Посуточный отчет»). Вход: строки листа из «Читать xlsx» =====
+// ===== Ежеежемесячный дайджест Langame (отчёт «Посуточный отчет»). Вход: строки листа из «Читать xlsx» =====
 const info = $('Классификация').first().json;
 
 function colIdx(k){ if(/^\d+$/.test(k)) return +k; let n=0; for(const ch of String(k).toUpperCase()){ if(ch<'A'||ch>'Z') return -1; n=n*26+ch.charCodeAt(0)-64; } return n-1; }
@@ -13,7 +13,7 @@ const norm = s => String(s??'').replace(/\s+/g,' ').trim();
 const num = v => { if(typeof v==='number') return v; const n=parseFloat(String(v??'').replace(/\s/g,'').replace(',','.')); return isNaN(n)?0:n; };
 const L = rows.map(r=>norm(r[0]));
 
-// Это не месячный (посуточный) отчёт — молча выходим (сменные и недельные файлы разбирает другой воркфлоу)
+// Это не ежемесячный (посуточный) отчёт — молча выходим (сменные и недельные файлы разбирает другой воркфлоу)
 if(!L.slice(0,8).some(x=>/^Посуточный отч[её]т/i.test(x))) return [];
 
 const find  = (label, from=0) => { for(let i=from;i<L.length;i++) if(L[i]===label) return i; return -1; };

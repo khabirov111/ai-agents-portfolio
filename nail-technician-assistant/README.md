@@ -37,6 +37,9 @@
 - **Обработка ошибок** (Error handler для каждой ветки).
 - **Шаблоны напоминаний** для клиентов (с адресом и оплатой).
 
+## 📸 Как это выглядит
+<img src="./screenshot.jpg" alt="Диалог с ассистентом мастера" width="320">
+
 ## 📁 Файлы
-- `AI assistant for nail technicians.json`: workflow диалогового агента.
+- `agent-workflow.json`: workflow диалогового агента.
 - `reminders-workflow.json`: workflow напоминаний.
