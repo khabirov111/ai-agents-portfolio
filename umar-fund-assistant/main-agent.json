@@ -21,7 +21,7 @@
       "webhookId": "umar-v6-webhook",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -55,7 +55,7 @@
       "webhookId": "65ae965f-03dc-40e9-b1aa-ac1a79435562",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       },
@@ -123,7 +123,7 @@
       "webhookId": "dc54864f-f0bf-4364-9376-ab66547d6769",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -146,7 +146,7 @@
       "name": "Transcribe audio",
       "credentials": {
         "openAiApi": {
-          "id": "REDACTED_OPENAI_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_OPENAI_CRED_NAME"
         }
       }
@@ -194,7 +194,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "REDACTED_SPREADSHEET_ID",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "REDACTED_SPREADSHEET_NAME",
           "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
@@ -219,7 +219,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REDACTED_GSHEETS_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_GSHEETS_CRED_NAME"
         }
       }
@@ -292,7 +292,7 @@
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "REDACTED_OPENAI_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_OPENAI_CRED_NAME"
         }
       }
@@ -393,7 +393,7 @@
       "webhookId": "72bb0db7-697e-426d-a60e-fba6549e34ea",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -517,7 +517,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "REDACTED_SPREADSHEET_ID",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "REDACTED_SPREADSHEET_NAME",
           "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
@@ -628,7 +628,7 @@
       "name": "Create booking",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REDACTED_GSHEETS_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_GSHEETS_CRED_NAME"
         }
       }
@@ -664,7 +664,7 @@
         "operation": "update",
         "documentId": {
           "__rl": true,
-          "value": "REDACTED_SPREADSHEET_ID",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "REDACTED_SPREADSHEET_NAME",
           "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
@@ -788,7 +788,7 @@
       "name": "Update booking",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REDACTED_GSHEETS_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_GSHEETS_CRED_NAME"
         }
       }
@@ -896,7 +896,7 @@
       "webhookId": "5fe42528-48ad-4cc8-95b8-367677bdb8fa",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -919,7 +919,7 @@
       "webhookId": "send-voice-webhook",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -1019,7 +1019,7 @@
       "webhookId": "send-voice-webhook",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -1467,6 +1467,5 @@
     "instanceId": "REDACTED_INSTANCE_ID"
   },
   "nodeGroups": [],
-  "id": "REDACTED_WORKFLOW_ID",
   "tags": []
 }

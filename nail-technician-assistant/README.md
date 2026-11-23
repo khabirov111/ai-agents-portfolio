@@ -38,5 +38,5 @@
 - **Шаблоны напоминаний** для клиентов (с адресом и оплатой).
 
 ## 📁 Файлы
-- `agent-workflow.json` — workflow диалогового агента.
-- `reminders-workflow.json` — workflow напоминаний.
+- `AI assistant for nail technicians.json`: workflow диалогового агента.
+- `reminders-workflow.json`: workflow напоминаний.

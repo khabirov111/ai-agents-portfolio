@@ -25,7 +25,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "REDACTED_SPREADSHEET_ID",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "REDACTED_SPREADSHEET_NAME",
           "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
@@ -50,7 +50,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REDACTED_GSHEETS_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_GSHEETS_CRED_NAME"
         }
       }
@@ -87,7 +87,7 @@
       "webhookId": "34085010-687e-4fc0-95b9-48decfadd8f7",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -116,7 +116,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "REDACTED_SPREADSHEET_ID",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "REDACTED_SPREADSHEET_NAME",
           "cachedResultUrl": "REDACTED_SPREADSHEET_URL"
@@ -141,7 +141,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REDACTED_GSHEETS_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_GSHEETS_CRED_NAME"
         }
       }
@@ -178,7 +178,7 @@
       "webhookId": "2b8b9d1f-0890-4822-8d83-6d5cd8ad799d",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED_TELEGRAM_CRED_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "REDACTED_TELEGRAM_CRED_NAME"
         }
       }
@@ -263,6 +263,5 @@
     "instanceId": "REDACTED_INSTANCE_ID"
   },
   "nodeGroups": [],
-  "id": "REDACTED_WORKFLOW_ID",
   "tags": []
 }

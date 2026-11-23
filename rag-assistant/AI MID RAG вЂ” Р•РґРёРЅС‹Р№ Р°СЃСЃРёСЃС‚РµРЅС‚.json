@@ -21,14 +21,14 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\n\nif (item.callback_query) {\n  return [{ json: { type: 'callback', payload: item } }];\n}\n\nif (item.message) {\n  const chatId = item.message.chat.id;\n  const isOwner = chatId === 8893645589;\n\n  const hasText = !!item.message.text;\n  const hasVoice = !!item.message.voice;\n  const hasAudio = !!item.message.audio;\n  const hasPhoto = !!item.message.photo;\n  const hasVideo = !!item.message.video;\n  const hasDocument = !!item.message.document;\n  const hasSticker = !!item.message.sticker;\n\n  if (hasVoice || hasAudio) {\n    return [{ json: { type: 'audio_message', payload: item } }];\n  }\n\n  if (hasPhoto) {\n    return [{ json: { type: 'photo_message', payload: item } }];\n  }\n\n  if (hasVideo) {\n    return [{ json: { type: 'video_message', payload: item } }];\n  }\n\n  if (hasDocument) {\n    return [{ json: { type: 'document_message', payload: item } }];\n  }\n\n  if (hasSticker) {\n    return [{ json: { type: 'unknown', payload: item } }];\n  }\n\n  if (hasText) {\n    return [{ json: { type: isOwner ? 'owner_message' : 'admin_message', payload: item } }];\n  }\n\n  return [{ json: { type: 'unknown', payload: item } }];\n}\n\nreturn [{ json: { type: 'unknown', payload: item } }];"
+        "jsCode": "const item = $input.first().json;\n\nif (item.callback_query) {\n  return [{ json: { type: 'callback', payload: item } }];\n}\n\nif (item.message) {\n  const chatId = item.message.chat.id;\n  const isOwner = chatId === 123456789;\n\n  const hasText = !!item.message.text;\n  const hasVoice = !!item.message.voice;\n  const hasAudio = !!item.message.audio;\n  const hasPhoto = !!item.message.photo;\n  const hasVideo = !!item.message.video;\n  const hasDocument = !!item.message.document;\n  const hasSticker = !!item.message.sticker;\n\n  if (hasVoice || hasAudio) {\n    return [{ json: { type: 'audio_message', payload: item } }];\n  }\n\n  if (hasPhoto) {\n    return [{ json: { type: 'photo_message', payload: item } }];\n  }\n\n  if (hasVideo) {\n    return [{ json: { type: 'video_message', payload: item } }];\n  }\n\n  if (hasDocument) {\n    return [{ json: { type: 'document_message', payload: item } }];\n  }\n\n  if (hasSticker) {\n    return [{ json: { type: 'unknown', payload: item } }];\n  }\n\n  if (hasText) {\n    return [{ json: { type: isOwner ? 'owner_message' : 'admin_message', payload: item } }];\n  }\n\n  return [{ json: { type: 'unknown', payload: item } }];\n}\n\nreturn [{ json: { type: 'unknown', payload: item } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -199,7 +199,7 @@
         "promptType": "define",
         "text": "={{ $json.transcript ? $json.transcript : $json.payload.message.text }}",
         "options": {
-          "systemMessage": "ROLE:\nТы — AI-ассистент администратора компьютерного клуба Mid.\n\nGOAL:\nДать точный, вежливый и полезный ответ на вопрос администратора.\n\nTASK:\n1. Найди ответ в базе знаний.\n2. Сформулируй ответ, ссылаясь на пункт регламента.\n3. Если ответа нет — верни ровно: «Извините, затрудняюсь ответить. Напишите Владиславу: @brdk_hh»\n\nCONSTRAINTS:\n- ОТВЕЧАЙ ТОЛЬКО НА РУССКОМ.\n- Ссылайся на пункт регламента.\n- Ответ не длиннее 1000 символов.\n- Без Markdown ** и * — используй эмодзи.\n\nOUTPUT FORMAT:\n💡 Ответ: {ответ}\n📖 Источник: {пункт регламента}"
+          "systemMessage": "ROLE:\nТы — AI-ассистент администратора компьютерного клуба Mid.\n\nGOAL:\nДать точный, вежливый и полезный ответ на вопрос администратора.\n\nTASK:\n1. Найди ответ в базе знаний.\n2. Сформулируй ответ, ссылаясь на пункт регламента.\n3. Если ответа нет — верни ровно: «Извините, затрудняюсь ответить. Напишите руководителю: @your_manager»\n\nCONSTRAINTS:\n- ОТВЕЧАЙ ТОЛЬКО НА РУССКОМ.\n- Ссылайся на пункт регламента.\n- Ответ не длиннее 1000 символов.\n- Без Markdown ** и * — используй эмодзи.\n\nOUTPUT FORMAT:\n💡 Ответ: {ответ}\n📖 Источник: {пункт регламента}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -226,7 +226,7 @@
       "name": "DeepSeek Chat Model",
       "credentials": {
         "deepSeekApi": {
-          "id": "ZvptOMfXQlpAX1tX",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "DeepSeek account"
         }
       }
@@ -267,7 +267,7 @@
       "name": "Qdrant Vector Store",
       "credentials": {
         "qdrantApi": {
-          "id": "neC3H3dFWNXIFpyA",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Qdrant n8n"
         }
       }
@@ -286,7 +286,7 @@
       "name": "Embeddings OpenAI",
       "credentials": {
         "openAiApi": {
-          "id": "GIDfjYbALP5URmSX",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Polza ai"
         }
       }
@@ -309,10 +309,10 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "MID Approvals",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
@@ -401,14 +401,14 @@
       "retryOnFail": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "fLfY7X05ioUnmmE0",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "-1004371185401",
+        "chatId": "-1001234567890",
         "text": "=📩 НОВЫЙ ВОПРОС ОТ АДМИНА\n\n👤 Админ: {{ $('Telegram Trigger').item.json.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n❓ Вопрос: {{ $json.question }}\n\n🤖 Предложенный ответ:\n{{ $('AI Agent').item.json.output }}\n\n---\nНажми кнопку ниже, чтобы согласовать.",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
@@ -450,7 +450,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -472,10 +472,10 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
           "cachedResultName": "MID Approvals",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10WwCHwZ-yPbK5n5bl0YinH5NVljmxUWtrEtnuMP32-0/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
@@ -503,7 +503,7 @@
       "retryOnFail": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "fLfY7X05ioUnmmE0",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
@@ -588,7 +588,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       },
@@ -611,7 +611,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       },
@@ -638,14 +638,14 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "-1004371185401",
+        "chatId": "-1001234567890",
         "text": "=✅ Команда выполнена: ответ отправлен админу.",
         "additionalFields": {
           "appendAttribution": false
@@ -663,7 +663,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -671,7 +671,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Get Answer from Sheet').item.json.adminChatId }}",
-        "text": "=🙏 Извините, затрудняюсь ответить.\n\n📩 Пожалуйста, свяжитесь с Владиславом: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>\n\n✅ Он поможет решить ваш вопрос.",
+        "text": "=🙏 Извините, затрудняюсь ответить.\n\n📩 Пожалуйста, свяжитесь с руководительом: <a href=\"https://t.me/your_manager\">@your_manager</a>\n\n✅ Он поможет решить ваш вопрос.",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -689,15 +689,15 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "-1004371185401",
-        "text": "=✅ Команда выполнена: админу отправлено сообщение про Владислава.",
+        "chatId": "-1001234567890",
+        "text": "=✅ Команда выполнена: админу отправлено сообщение про руководителя.",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -714,7 +714,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -736,7 +736,7 @@
       "webhookId": "cd24d772-e794-473c-bd1d-48f338d30aa7",
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -759,7 +759,7 @@
       "name": "Transcribe Audio",
       "credentials": {
         "openAiApi": {
-          "id": "GIDfjYbALP5URmSX",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Polza ai"
         }
       }
@@ -794,7 +794,7 @@
       "webhookId": "09b4b2a8-d4ef-4bd8-a61e-3acb2fe3332e",
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -802,7 +802,7 @@
     {
       "parameters": {
         "operation": "sendPhoto",
-        "chatId": "-1004371185401",
+        "chatId": "-1001234567890",
         "binaryData": true,
         "additionalFields": {
           "caption": "=📸 ФОТО ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
@@ -820,7 +820,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -828,7 +828,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
-        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📸 Ваше фото отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📸 Ваше фото отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите руководителю: <a href=\"https://t.me/your_manager\">@your_manager</a>",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -846,7 +846,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -868,7 +868,7 @@
       "webhookId": "533671c2-8995-48e8-b5d8-1b053b37a31a",
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -876,7 +876,7 @@
     {
       "parameters": {
         "operation": "sendVideo",
-        "chatId": "-1004371185401",
+        "chatId": "-1001234567890",
         "binaryData": true,
         "additionalFields": {
           "caption": "=🎥 ВИДЕО ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
@@ -894,7 +894,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -902,7 +902,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
-        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n🎥 Ваше видео отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n🎥 Ваше видео отправлено в группу администраторов.\n\n💬 Если нужен ответ — напишите руководителю: <a href=\"https://t.me/your_manager\">@your_manager</a>",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -920,7 +920,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -942,7 +942,7 @@
       "webhookId": "2c78656f-2e8e-4648-94e4-97f0d31d4bd8",
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -950,7 +950,7 @@
     {
       "parameters": {
         "operation": "sendDocument",
-        "chatId": "-1004371185401",
+        "chatId": "-1001234567890",
         "binaryData": true,
         "additionalFields": {
           "caption": "=📄 ДОКУМЕНТ ОТ АДМИНА\n\n👤 Админ: {{ $('Router').item.json.payload.message.from.first_name }}\n🆔 Chat ID: {{ $('Router').item.json.payload.message.chat.id }}\n📝 Подпись: {{ $('Router').item.json.payload.message.caption || '(без подписи)' }}"
@@ -968,7 +968,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -976,7 +976,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Router').item.json.payload.message.chat.id }}",
-        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📄 Ваш документ отправлен в группу администраторов.\n\n💬 Если нужен ответ — напишите Владиславу: <a href=\"https://t.me/brdk_hh\">@brdk_hh</a>",
+        "text": "=🙏 Извините, я работаю только с текстом и голосовыми.\n\n📄 Ваш документ отправлен в группу администраторов.\n\n💬 Если нужен ответ — напишите руководителю: <a href=\"https://t.me/your_manager\">@your_manager</a>",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "HTML"
@@ -994,7 +994,7 @@
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "xfnHAQ3k3NJW5UyU",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "AI mid"
         }
       }
@@ -1336,7 +1336,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "timeSavedMode": "fixed",
-    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
@@ -1345,6 +1345,5 @@
     "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
   },
   "nodeGroups": [],
-  "id": "KcHv3oMiHvVzNW3c",
   "tags": []
 }

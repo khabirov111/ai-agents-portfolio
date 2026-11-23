@@ -1,0 +1,359 @@
+{
+  "name": "Yandex карта (отзывы, исправленный)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                2
+              ],
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -300,
+        -100
+      ],
+      "id": "y-sched",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        100
+      ],
+      "id": "y-manual",
+      "name": "Ручной запуск (тест)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Список клубов Яндекс Карт (Октябрьский). Чтобы добавить клуб — добавьте строку.\nconst clubs = [\n  { club: 'MID',            slug: 'mid',              id: '178838287044' },\n  { club: 'King Gaming',    slug: 'kinggaming',       id: '242798458847' },\n  { club: 'JoJo Киберзона', slug: 'jojo_kiberzona',   id: '49561370161'  },\n  { club: 'Go катку',       slug: 'go_katku',         id: '96128267060'  },\n  { club: 'X Gaming',       slug: 'x_gaming',         id: '9804111217'   },\n  { club: 'CyberFocus',     slug: 'cyberfocus_place', id: '42964574977'  },\n];\nreturn clubs.map(c => ({ json: { club: c.club, url: `https://yandex.ru/maps/org/${c.slug}/${c.id}/reviews/?ranking=by_time` } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "y-clubs",
+      "name": "Список клубов"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "ru-RU,ru;q=0.9,en;q=0.8"
+            },
+            {
+              "name": "Referer",
+              "value": "https://yandex.ru/maps/"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 4000
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        140,
+        0
+      ],
+      "id": "y-http",
+      "name": "Загрузить страницу"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== Разбор страниц отзывов Яндекс Карт → дайджест =====\nconst clubs = $('Список клубов').all().map(i => i.json);\nconst pages = $input.all();\nconst DAYS = 7;\n\n// ---------- утилиты ----------\nconst decode = s => String(s ?? '')\n  .replace(/&nbsp;|&#160;/g, ' ').replace(/&quot;|&#34;/g, '\"').replace(/&#39;|&apos;/g, \"'\")\n  .replace(/&laquo;/g, '«').replace(/&raquo;/g, '»').replace(/&ndash;/g, '–').replace(/&mdash;/g, '—')\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')\n  .replace(/&#(\\d+);/g, (_, n) => String.fromCharCode(+n));\nconst strip = h => decode(String(h ?? '').replace(/<br\\s*\\/?>/gi, '\\n').replace(/<[^>]*>/g, ' ')).replace(/[ \\t ]+/g, ' ').replace(/\\s*\\n\\s*/g, '\\n').trim();\n\n// парный тег: от позиции открывающего тега до его закрытия (учитывает вложенность)\nfunction balanced(html, start) {\n  const m = /^<(\\w+)/.exec(html.slice(start, start + 40)); if (!m) return null;\n  const tag = m[1].toLowerCase(); const re = new RegExp(`<(/?)${tag}\\\\b[^>]*?(/?)>`, 'gi');\n  re.lastIndex = start; let depth = 0, mm;\n  while ((mm = re.exec(html))) {\n    if (mm[1] === '/') { depth--; if (depth === 0) return html.slice(start, re.lastIndex); }\n    else if (mm[2] !== '/') depth++;\n  }\n  return html.slice(start);\n}\n// все элементы, у которых в class есть токен cls\nfunction byClass(html, cls) {\n  const out = []; const re = /<(\\w+)\\b[^>]*?\\bclass=\"([^\"]*)\"[^>]*>/gi; let m;\n  while ((m = re.exec(html))) {\n    if (m[2].split(/\\s+/).includes(cls)) { const el = balanced(html, m.index); if (el) { out.push(el); re.lastIndex = m.index + m[0].length; } }\n  }\n  return out;\n}\nconst first = (html, cls) => { const a = byClass(html, cls); return a.length ? a[0] : null; };\nconst meta = (html, prop) => { const m = new RegExp(`<meta[^>]+itemprop=\"${prop}\"[^>]+content=\"([^\"]*)\"`, 'i').exec(html) || new RegExp(`<meta[^>]+content=\"([^\"]*)\"[^>]+itemprop=\"${prop}\"`, 'i').exec(html); return m ? decode(m[1]) : null; };\n\nconst MONTHS = { 'января':0,'февраля':1,'марта':2,'апреля':3,'мая':4,'июня':5,'июля':6,'августа':7,'сентября':8,'октября':9,'ноября':10,'декабря':11 };\nconst today = new Date(); const T0 = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());\nfunction parseDate(raw) {                      // → число (UTC-полночь дня) или null\n  if (!raw) return null; const s = String(raw).trim().toLowerCase();\n  let m;\n  if ((m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(s))) return Date.UTC(+m[1], +m[2]-1, +m[3]);\n  if ((m = /^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})/.exec(s))) return Date.UTC(+m[3], +m[2]-1, +m[1]);\n  if (s.includes('сегодня')) return T0;\n  if (s.includes('вчера')) return T0 - 86400000;\n  if ((m = /(\\d+)\\s*(?:день|дня|дней)\\s*назад/.exec(s))) return T0 - (+m[1]) * 86400000;\n  if ((m = /(?:^|\\s)(\\d{1,2})\\s+([а-яё]+)(?:\\s+(\\d{4}))?/.exec(s)) && MONTHS[m[2]] !== undefined) {\n    let y = m[3] ? +m[3] : today.getUTCFullYear(); let d = Date.UTC(y, MONTHS[m[2]], +m[1]);\n    if (!m[3] && d > T0 + 86400000) d = Date.UTC(y - 1, MONTHS[m[2]], +m[1]);   // «20 декабря» в январе = прошлый год\n    return d;\n  }\n  return null;\n}\nconst fmt = ms => { const d = new Date(ms); return `${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${d.getUTCFullYear()}`; };\n\nfunction parseReviews(html) {\n  const blocks = byClass(html, 'business-review-view');\n  const res = [];\n  for (const b of blocks) {\n    const authorEl = first(b, 'business-review-view__author-name') || first(b, 'business-review-view__author');\n    const author = authorEl ? strip(authorEl) : (meta(b, 'name') || '');\n    const dateRaw = meta(b, 'datePublished') || (first(b, 'business-review-view__date') ? strip(first(b, 'business-review-view__date')) : '');\n    let rating = null; let m;\n    if ((m = /aria-label=\"[^\"]*?(\\d(?:[.,]\\d)?)\\s*(?:из|Из)\\s*5/.exec(b))) rating = parseFloat(m[1].replace(',', '.'));\n    else if (meta(b, 'ratingValue')) rating = parseFloat(meta(b, 'ratingValue'));\n    else { const full = (b.match(/business-rating-badge-view__star[^\"]*_full/g) || []).length; if (full) rating = full; }\n    const textEl = first(b, 'business-review-view__body-text') || first(b, 'business-review-view__body');\n    const text = textEl ? strip(textEl) : '';\n    res.push({ author, dateRaw, date: parseDate(dateRaw), rating, text });\n  }\n  return res;\n}\n\n// ---------- обработка ----------\nconst cutoff = T0 - DAYS * 86400000;\nconst perClub = [], diag = [];\nlet blocksTotal = 0, okPages = 0;\nclubs.forEach((c, i) => {\n  const j = pages[i]?.json || {};\n  const html = String(j.body ?? j.data ?? ''); const code = j.statusCode ?? (html ? 200 : 0);\n  const captcha = /showcaptcha|smartcaptcha|SmartCaptcha|Вы не робот|Подтвердите, что запросы отправляли вы|captcha/i.test(html.slice(0, 200000)) && !/business-review-view/.test(html);\n  const all = html ? parseReviews(html) : [];\n  blocksTotal += all.length; if (code === 200 && !captcha) okPages++;\n  const seen = new Set();\n  const fresh = all.filter(r => r.date !== null && r.date >= cutoff && r.date <= T0 + 86400000)\n    .filter(r => { const k = r.author + '|' + r.date + '|' + r.text; if (seen.has(k)) return false; seen.add(k); return true; })\n    .sort((a, b) => b.date - a.date);\n  const undated = all.filter(r => r.date === null).length;\n  perClub.push({ club: c.club, reviews: fresh });\n  diag.push(`${c.club}: HTTP ${code || 'нет ответа'}, ${Math.round(html.length / 1024)} КБ${captcha ? ', КАПЧА' : ''}, блоков отзывов ${all.length}, за неделю ${fresh.length}${undated ? `, без даты ${undated}` : ''}`);\n});\n\nconst total = perClub.reduce((s, c) => s + c.reviews.length, 0);\nlet status = 'ok', text = '';\nconst failed = diag.filter((d, i) => !/блоков отзывов [1-9]/.test(d) && /КАПЧА|HTTP (?!200)/.test(d));\nif (blocksTotal === 0) {\n  status = 'blocked';\n  text = '🚨 Дайджест отзывов Яндекс Карт: не удалось получить ни одного отзыва.\\n' +\n    'Скорее всего Яндекс отдаёт капчу/блокирует сервер или поменял вёрстку (это НЕ значит, что отзывов нет).\\n\\n' + diag.join('\\n') +\n    '\\n\\nЧто проверить: открыть любую страницу клуба в браузере; если страница открывается, а тут капча — нужен прокси с российским IP в ноде «Загрузить страницу» (Options → Proxy).';\n} else if (total === 0) {\n  status = 'empty';\n  text = `📊 Еженедельный дайджест отзывов (Яндекс Карты)\\n📅 за последние ${DAYS} дней | г. Октябрьский\\n\\nЗа последнюю неделю новых отзывов не появилось.` +\n    (failed.length ? `\\n\\n⚠️ Не все страницы загрузились:\\n${failed.join('\\n')}` : '');\n}\n\n// тон — по оценке (детерминированно, без домыслов)\nconst tone = r => r === null ? '➖' : r >= 4 ? '✅' : r === 3 ? '➖' : '⚠️';\nconst num = n => n <= 9 ? `${n}️⃣` : `${n}.`;\nlet digest = '';\nlet pos = 0, neg = 0, neu = 0, sum = 0, cnt = 0;\nif (status === 'ok') {\n  const L = [`📊 Еженедельный дайджест отзывов (Яндекс Карты)`, `📅 Свежие отзывы за последние ${DAYS} дней | г. Октябрьский`];\n  for (const c of perClub.filter(c => c.reviews.length)) {\n    L.push('', '─────────────', `🏢 Клуб: ${c.club}`, `📝 Новых отзывов: ${c.reviews.length}`);\n    c.reviews.forEach((r, k) => {\n      const t = tone(r.rating); if (t === '✅') pos++; else if (t === '⚠️') neg++; else neu++;\n      if (r.rating !== null) { sum += r.rating; cnt++; }\n      L.push('', `${num(k + 1)} 👤 ${r.author || 'Аноним'} | 📅 ${fmt(r.date)} | ⭐ ${r.rating ?? '—'}/5`);\n      L.push(r.text ? `💬 \"${r.text}\"` : '💬 (без текста, только оценка)'); L.push(t);\n    });\n  }\n  const none = perClub.filter(c => !c.reviews.length).map(c => c.club);\n  L.push('', '─────────────', '📌 Общий итог по неделе:', `Всего новых отзывов: ${total}`, `Позитивных: ${pos} ✅`, `Негативных: ${neg} ⚠️`, `Нейтральных: ${neu} ➖`);\n  if (cnt) L.push(`Средняя оценка: ${(sum / cnt).toFixed(1)} ⭐`);\n  if (none.length) L.push(`Без новых отзывов: ${none.join(', ')}`);\n  if (failed.length) L.push('', '⚠️ Не все страницы загрузились:', ...failed);\n  digest = L.join('\\n');\n}\n// компактные данные для ИИ (только темы и вывод)\nconst forAI = perClub.flatMap(c => c.reviews.map(r => ({ club: c.club, rating: r.rating, text: (r.text || '').slice(0, 400) })));\nreturn [{ json: { status, text, digest, total, reviews: forAI, diag } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        0
+      ],
+      "id": "y-parse",
+      "name": "Разбор отзывов"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "y1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "y-if",
+      "name": "Есть отзывы?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json.reviews) }}",
+        "options": {
+          "systemMessage": "Ты помогаешь владельцу компьютерного клуба Mid. Тебе дан JSON со свежими отзывами гостей клубов города Октябрьский за неделю (club, rating, text). Отзывы, оценки и тональность уже посчитаны в дайджесте — ты их НЕ пересказываешь и НЕ меняешь.\nТвоя задача — только два блока, строго в таком виде, обычным текстом без звёздочек и markdown:\n💡 Ключевые темы:\n- тема 1\n- тема 2\n- тема 3\n(2–3 темы, которые реально повторяются в текстах: персонал, компьютеры, чистота, цены, шум и т.п.; если отзывов мало или без текста — напиши одну строку «Тем для выделения мало»)\n📊 Вывод: 1–2 предложения о настроении гостей за неделю.\nПравила: только факты из переданных отзывов, ничего не выдумывай, без рекомендаций по управлению клубом, нейтральный деловой тон, не более 600 символов."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        800,
+        -120
+      ],
+      "id": "y-agent",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        860,
+        80
+      ],
+      "id": "y-ds",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Склейка дайджеста с блоком тем/вывода от ИИ и деление на сообщения ≤ 4000 символов\nconst base = $('Разбор отзывов').first().json;\nlet ai = String($input.first().json.output || '').replace(/\\*\\*/g, '').trim();\nlet full = base.digest + (ai ? '\\n\\n─────────────\\n' + ai : '');\nconst LIM = 3900, parts = []; let cur = '';\nfor (const line of full.split('\\n')) {\n  if ((cur + '\\n' + line).length > LIM) { parts.push(cur); cur = line; } else cur = cur ? cur + '\\n' + line : line;\n}\nif (cur) parts.push(cur);\nreturn parts.map(t => ({ json: { text: t } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -120
+      ],
+      "id": "y-final",
+      "name": "Склейка дайджеста"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { text: $json.text } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        200
+      ],
+      "id": "y-alert",
+      "name": "Сообщение (пусто / ошибка)"
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        0
+      ],
+      "id": "y-tg",
+      "name": "Send a text message",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Список клубов",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ручной запуск (тест)": {
+      "main": [
+        [
+          {
+            "node": "Список клубов",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Список клубов": {
+      "main": [
+        [
+          {
+            "node": "Загрузить страницу",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Загрузить страницу": {
+      "main": [
+        [
+          {
+            "node": "Разбор отзывов",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разбор отзывов": {
+      "main": [
+        [
+          {
+            "node": "Есть отзывы?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть отзывы?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сообщение (пусто / ошибка)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Склейка дайджеста",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Склейка дайджеста": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сообщение (пусто / ошибка)": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "tags": []
+}

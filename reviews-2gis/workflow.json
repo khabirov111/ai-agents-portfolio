@@ -1,0 +1,371 @@
+{
+  "name": "2 gis (исправленный)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -300,
+        -100
+      ],
+      "id": "g-sched",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        100
+      ],
+      "id": "g-manual",
+      "name": "Ручной запуск (тест)"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/zen-studio~2gis-reviews-scraper/runs?status=SUCCEEDED&desc=true&limit=30&token=YOUR_APIFY_TOKEN",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "g-runs",
+      "name": "Запуски Apify",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.datasetId }}/items?clean=true&token=YOUR_APIFY_TOKEN",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        360,
+        0
+      ],
+      "id": "g-items",
+      "name": "Отзывы из Apify",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 2ГИС: отзывы из Apify → дайджест за неделю =====\nconst DAYS = 7, STALE_DAYS = 8;\nconst runsResp = (() => { try { return $('Запуски Apify').first().json || {}; } catch (e) { return {}; } })();\nconst picked = (() => { try { return $('Выбрать запуски').all().map(i => i.json); } catch (e) { return []; } })();\nconst newest = picked.map(r => r.finishedAt).filter(Boolean).sort().slice(-1)[0] || null;\nconst run = { error: runsResp.error, data: newest ? { finishedAt: newest } : null };\nconst rawItems = $input.all().map(i => i.json);\n\nconst MONTHS = { 'января':0,'февраля':1,'марта':2,'апреля':3,'мая':4,'июня':5,'июля':6,'августа':7,'сентября':8,'октября':9,'ноября':10,'декабря':11 };\nconst now = new Date(); const T0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());\nconst fmt = ms => { const d = new Date(ms); return `${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${d.getUTCFullYear()}`; };\nfunction parseDate(v) {                       // → UTC-полночь дня или null\n  if (v === null || v === undefined || v === '') return null;\n  if (typeof v === 'number') { const ms = v > 1e11 ? v : v * 1000; const d = new Date(ms); return isNaN(d) ? null : Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); }\n  const s = String(v).trim().toLowerCase(); let m;\n  if (/^\\d{9,13}$/.test(s)) return parseDate(Number(s));\n  if ((m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(s))) return Date.UTC(+m[1], +m[2]-1, +m[3]);\n  if ((m = /^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})/.exec(s))) return Date.UTC(+m[3], +m[2]-1, +m[1]);\n  if ((m = /(\\d{1,2})\\s+([а-яё]+)\\s*(\\d{4})?/.exec(s)) && MONTHS[m[2]] !== undefined) {\n    let y = m[3] ? +m[3] : now.getUTCFullYear(); let d = Date.UTC(y, MONTHS[m[2]], +m[1]);\n    if (!m[3] && d > T0 + 86400000) d = Date.UTC(y - 1, MONTHS[m[2]], +m[1]); return d;\n  }\n  const d = new Date(s); return isNaN(d) ? null : Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());\n}\n// первое непустое значение по списку возможных названий поля (в т.ч. вложенных через точку)\nconst pick = (o, keys) => { for (const k of keys) { let v = o; for (const p of k.split('.')) v = v == null ? undefined : v[p]; if (v !== undefined && v !== null && v !== '') return v; } return null; };\nconst str = v => v === null ? '' : (typeof v === 'object' ? String(v.name ?? v.title ?? v.text ?? '') : String(v)).trim();\nconst numv = v => { if (v === null) return null; if (typeof v === 'object') v = v.value ?? v.rating ?? v.score; const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };\n\nconst K = {\n  club:   ['placeName','place.name','placeTitle','place.title','branchName','organizationName','orgName','firmName','businessName','companyName','object.name','org.name'],\n  clubId: ['placeId','branchId','firmId','orgId','objectId','place.id'],\n  text:   ['reviewText','text','comment','content','review','body','message'],\n  rating: ['rating','reviewRating','stars','score','rate'],\n  author: ['authorName','author.name','author','userName','user.name','reviewerName','reviewer.name','user'],\n  date:   ['createdAt','dateCreated','date','reviewDate','publishedAt','published','created','dateEdited','timestamp','time'],\n  id:     ['reviewId','id','review_id'],\n};\n\n// ---- диагностика источника ----\nconst problems = []; let status = 'ok';\nif (run.error) problems.push(`Apify (статус запуска): ${str(run.error.message || run.error.type || JSON.stringify(run.error)).slice(0, 200)}`);\nconst finished = run.data && run.data.finishedAt ? new Date(run.data.finishedAt) : null;\nconst ageDays = finished ? (Date.now() - finished.getTime()) / 86400000 : null;\nif (finished && ageDays > STALE_DAYS) { status = 'stale'; }\nif (!finished && !run.error) problems.push('Apify не вернул дату последнего успешного запуска');\nconst errItem = rawItems.find(r => r && r.error);\nif (errItem) problems.push(`Apify (датасет): ${str(errItem.error.message || errItem.error.type || JSON.stringify(errItem.error)).slice(0, 200)}`);\nconst items = rawItems.filter(r => r && !r.error && typeof r === 'object' && Object.keys(r).length);\n\n// ---- разбор ----\nconst cutoff = T0 - DAYS * 86400000;\nconst parsed = [];\nfor (const r of items) {\n  const rt = str(pick(r, ['recordType','type']));\n  if (rt && !/review|отзыв/i.test(rt)) continue;                 // строки о самом месте — пропускаем\n  const text = str(pick(r, K.text)), rating = numv(pick(r, K.rating)), dateRaw = pick(r, K.date), date = parseDate(dateRaw);\n  if (!text && rating === null && date === null) continue;       // пустая строка\n  const clubName = str(pick(r, K.club)) || (pick(r, K.clubId) ? `Клуб (ID ${str(pick(r, K.clubId))})` : 'Неизвестный клуб');\n  parsed.push({ id: str(pick(r, K.id)), club: clubName, author: str(pick(r, K.author)) || 'Аноним', text, rating, date, dateRaw });\n}\nconst undated = parsed.filter(r => r.date === null).length;\nconst seen = new Set();\nconst fresh = parsed.filter(r => r.date !== null && r.date >= cutoff && r.date <= T0 + 86400000)\n  .filter(r => { const k = (r.id ? r.club + '|' + r.id : r.club + '|' + r.author + '|' + r.date + '|' + r.text); if (seen.has(k)) return false; seen.add(k); return true; })\n  .sort((a, b) => b.date - a.date);\n\nconst diagLines = [\n  `Последний успешный запуск Apify: ${finished ? fmt(finished.getTime()) + ` (${ageDays.toFixed(1)} дн. назад)` : 'неизвестно'}`,\n  `Строк в датасете: ${rawItems.length}, отзывов распознано: ${parsed.length}, за ${DAYS} дн.: ${fresh.length}${undated ? `, без распознанной даты: ${undated}` : ''}`,\n];\nconst clubsAll = [...new Set(parsed.map(r => r.club))];\ndiagLines.push(`Запусков Apify учтено: ${picked.filter(r => r.datasetId).length}, клубов в данных: ${clubsAll.length}${clubsAll.length ? ' (' + clubsAll.join(', ') + ')' : ''}`);\nif (items[0]) diagLines.push('Поля первой строки: ' + Object.keys(items[0]).slice(0, 25).join(', '));\n\nlet text = '', digest = '', total = fresh.length;\nif (status === 'stale') {\n  text = `🚨 Дайджест отзывов 2ГИС не отправлен: данные в Apify устарели.\\nПоследний успешный запуск парсера был ${fmt(finished.getTime())} (${Math.round(ageDays)} дн. назад) — новых отзывов он не собирал.\\n\\nПроверьте расписание запуска актора в Apify (Schedules) и его последний запуск.\\n\\n` + diagLines.join('\\n');\n} else if (problems.length && !items.length) {\n  status = 'alert';\n  text = '🚨 Дайджест отзывов 2ГИС: не удалось получить данные из Apify.\\n' + problems.join('\\n') + '\\n\\n' + diagLines.join('\\n') + '\\n\\nПроверьте токен Apify и что у актора есть успешный запуск.';\n} else if (!items.length) {\n  status = 'alert';\n  text = '🚨 Дайджест отзывов 2ГИС: датасет последнего запуска пуст (это не значит, что отзывов нет).\\n\\n' + diagLines.join('\\n');\n} else if (!parsed.length || (undated === parsed.length)) {\n  status = 'alert';\n  text = '🚨 Дайджест отзывов 2ГИС: не смог распознать поля в данных Apify (изменился формат актора?).\\n\\n' + diagLines.join('\\n') + '\\n\\nПришлите это сообщение — подправлю разбор.';\n} else if (!fresh.length) {\n  status = 'empty';\n  text = `📊 Еженедельный дайджест отзывов (2ГИС)\\n📅 за последние ${DAYS} дней | г. Октябрьский\\n\\nЗа последнюю неделю новых отзывов не появилось.`;\n} else {\n  const tone = r => r === null ? '➖' : r >= 4 ? '✅' : r === 3 ? '➖' : '⚠️';\n  const num = n => n <= 9 ? `${n}️⃣` : `${n}.`;\n  const byClub = {}; fresh.forEach(r => (byClub[r.club] = byClub[r.club] || []).push(r));\n  const L = ['📊 Еженедельный дайджест отзывов (2ГИС)', `📅 Свежие отзывы за последние ${DAYS} дней | г. Октябрьский`];\n  let pos = 0, neg = 0, neu = 0, sum = 0, cnt = 0;\n  for (const [club, rs] of Object.entries(byClub).sort((a, b) => b[1].length - a[1].length)) {\n    L.push('', '─────────────', `🏢 Клуб: ${club}`, `📝 Новых отзывов: ${rs.length}`);\n    rs.forEach((r, k) => {\n      const t = tone(r.rating); if (t === '✅') pos++; else if (t === '⚠️') neg++; else neu++;\n      if (r.rating !== null) { sum += r.rating; cnt++; }\n      L.push('', `${num(k + 1)} 👤 ${r.author} | 📅 ${fmt(r.date)} | ⭐ ${r.rating ?? '—'}/5`);\n      L.push(r.text ? `💬 \"${r.text}\"` : '💬 (без текста, только оценка)', t);\n    });\n  }\n  // сравнение с прошлой неделей (работает при запуске по расписанию — память воркфлоу)\n  const sd = $getWorkflowStaticData('global'); const prevTotal = sd.prevTotal;\n  const cmp = (prevTotal !== undefined && prevTotal !== null) ? ` (прошлая неделя: ${prevTotal})` : '';\n  sd.prevTotal = total;\n  L.push('', '─────────────', '📌 Общий итог по неделе:', `Всего новых отзывов: ${total}${cmp}`, `Позитивных: ${pos} ✅`, `Негативных: ${neg} ⚠️`, `Нейтральных: ${neu} ➖`);\n  if (cnt) L.push(`Средняя оценка: ${(sum / cnt).toFixed(1)} ⭐`);\n  L.push(`🏢 Клубов с отзывами за неделю: ${Object.keys(byClub).length} из ${clubsAll.length} в данных Apify`);\n  if (ageDays !== null && ageDays > 3) L.push('', `ℹ️ Данные Apify собраны ${fmt(finished.getTime())}`);\n  digest = L.join('\\n');\n}\nconst forAI = fresh.map(r => ({ club: r.club, rating: r.rating, text: (r.text || '').slice(0, 400) }));\nreturn [{ json: { status: status === 'ok' ? 'ok' : status, text, digest, total, reviews: forAI, diag: diagLines } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "g-parse",
+      "name": "Разбор отзывов"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "g-if",
+      "name": "Есть отзывы?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json.reviews) }}",
+        "options": {
+          "systemMessage": "Ты помогаешь владельцу компьютерного клуба Mid. Тебе дан JSON со свежими отзывами гостей компьютерных клубов города Октябрьский из 2ГИС за неделю (club, rating, text). Отзывы, оценки и тональность уже посчитаны в дайджесте — ты их НЕ пересказываешь и НЕ меняешь.\nТвоя задача — только два блока, строго в таком виде, обычным текстом без звёздочек и markdown:\n💡 Ключевые темы:\n- тема 1\n- тема 2\n- тема 3\n(2–3 темы, которые реально повторяются в текстах: персонал, компьютеры, чистота, цены, шум и т.п.; если отзывов мало или без текста — одна строка «Тем для выделения мало»)\n📊 Вывод: 1–2 предложения о настроении гостей за неделю.\nПравила: только факты из переданных отзывов, ничего не выдумывай, без рекомендаций по управлению клубом, нейтральный деловой тон, не более 600 символов."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1020,
+        -120
+      ],
+      "id": "g-agent",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        80
+      ],
+      "id": "g-ds",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Склейка дайджеста с блоком тем/вывода от ИИ и деление на сообщения ≤ 4000 символов\nconst base = $('Разбор отзывов').first().json;\nlet ai = String($input.first().json.output || '').replace(/\\*\\*/g, '').trim();\nlet full = base.digest + (ai ? '\\n\\n─────────────\\n' + ai : '');\nconst LIM = 3900, parts = []; let cur = '';\nfor (const line of full.split('\\n')) {\n  if ((cur + '\\n' + line).length > LIM) { parts.push(cur); cur = line; } else cur = cur ? cur + '\\n' + line : line;\n}\nif (cur) parts.push(cur);\nreturn parts.map(t => ({ json: { text: t } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -120
+      ],
+      "id": "g-final",
+      "name": "Склейка дайджеста"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { text: $json.text } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        200
+      ],
+      "id": "g-alert",
+      "name": "Сообщение (пусто / ошибка)"
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1560,
+        0
+      ],
+      "id": "g-tg",
+      "name": "Send a text message",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берём все успешные запуски актора за последние 8 дней (каждый мог собирать свой клуб)\nconst items = ($input.first().json.data && $input.first().json.data.items) || [];\nconst WINDOW = 8 * 86400000;\nconst recent = items.filter(r => r.finishedAt && Date.now() - new Date(r.finishedAt).getTime() <= WINDOW && r.defaultDatasetId);\n// если свежих нет — берём самый новый, чтобы дальше сработала проверка «данные устарели»\nconst use = (recent.length ? recent : items.slice(0, 1)).slice(0, 30);\nif (!use.length) return [{ json: { datasetId: '', finishedAt: null } }];\nconst seen = new Set();\nreturn use.filter(r => !seen.has(r.defaultDatasetId) && seen.add(r.defaultDatasetId))\n  .map(r => ({ json: { datasetId: r.defaultDatasetId, finishedAt: r.finishedAt, runId: r.id } }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        0
+      ],
+      "id": "g-select",
+      "name": "Выбрать запуски"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Запуски Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ручной запуск (тест)": {
+      "main": [
+        [
+          {
+            "node": "Запуски Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отзывы из Apify": {
+      "main": [
+        [
+          {
+            "node": "Разбор отзывов",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разбор отзывов": {
+      "main": [
+        [
+          {
+            "node": "Есть отзывы?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть отзывы?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сообщение (пусто / ошибка)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Склейка дайджеста",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Склейка дайджеста": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сообщение (пусто / ошибка)": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Запуски Apify": {
+      "main": [
+        [
+          {
+            "node": "Выбрать запуски",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Выбрать запуски": {
+      "main": [
+        [
+          {
+            "node": "Отзывы из Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "tags": []
+}

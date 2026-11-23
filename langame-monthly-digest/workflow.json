@@ -1,0 +1,358 @@
+{
+  "name": "Langame → Месячный дайджест",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Langame → Месячный дайджест\n\n**Как это работает**\nКидаешь в канал Langame (или боту в личку) файл «Посуточный отчёт» за месяц (.xlsx). Воркфлоу сам определяет, что это месячный отчёт, считает цифры в коде, сравнивает с прошлым месяцем из Google Sheets, отправляет дайджест в Telegram и сохраняет месяц в таблицу.\n\n**Что сделать один раз**\n1. Создай Google-таблицу, лист «Лист1», в первой строке заголовки: **Месяц | Название | Дайджест | Данные**\n2. В двух нодах Google Sheets («Прошлые месяцы» и «Сохранить месяц») выбери эту таблицу.\n3. Бот «MID reels» должен быть администратором канала Langame (иначе он не увидит файлы). Либо присылай файл ему в личку.\n4. Активируй воркфлоу.\n\n**Важно**\nЭтот воркфлоу слушает через бота «MID reels», потому что у одного бота может быть только один Telegram-триггер (бот «MID n8n» занят воркфлоу смен и недель). Дайджест отправляет бот «MID n8n».\nПовторная отправка того же месяца обновляет его строку в таблице, дублей нет.",
+        "height": 430,
+        "width": 520
+      },
+      "id": "s1",
+      "name": "Инструкция",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -520
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "channel_post"
+        ],
+        "additionalFields": {}
+      },
+      "id": "m1",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "3fc2476d-cc03-4ae5-ab8d-7fb6cece5ecb",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID reels"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const u = $input.first().json;\nconst msg = u.channel_post || u.edited_channel_post || u.message || u.edited_message;\nif(!msg || !msg.document) return [];\n// слушаем канал Langame (или личку с ботом — для ручной пересылки файла)\nconst LANGAME_CHAT = -1001234567890;\nif(msg.chat?.id !== LANGAME_CHAT && msg.chat?.type !== 'private') return [];\nconst name = msg.document.file_name || '';\nif(!/\\.xlsx$/i.test(name)) return [];\n// сменные отчёты разбирает другой воркфлоу; месячный определяется по содержимому файла\nif(/^Отчет_по_смене_\\d+_/.test(name)) return [];\nreturn [{json:{fileName:name, caption: msg.caption||'', fileId: msg.document.file_id, chatId: msg.chat?.id, messageId: msg.message_id}}];\n"
+      },
+      "id": "m2",
+      "name": "Классификация",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "m3",
+      "name": "Прошлые месяцы",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Собираем все строки таблицы в один элемент, чтобы дальше всё шло один раз\nconst rows = [];\nfor(const it of $input.all()){\n  const j = it.json || {};\n  const raw = j['Данные'];\n  if(!raw) continue;\n  rows.push({key: String(j['Месяц']||''), data: String(raw)});\n}\nreturn [{json:{rows}}];\n"
+      },
+      "id": "m4",
+      "name": "Прошлые месяцы (сводка)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Классификация').first().json.fileId }}"
+      },
+      "id": "m5",
+      "name": "Скачать файл",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID reels"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": false
+        }
+      },
+      "id": "m6",
+      "name": "Читать xlsx",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== Месячный дайджест Langame (отчёт «Посуточный отчет»). Вход: строки листа из «Читать xlsx» =====\nconst info = $('Классификация').first().json;\n\nfunction colIdx(k){ if(/^\\d+$/.test(k)) return +k; let n=0; for(const ch of String(k).toUpperCase()){ if(ch<'A'||ch>'Z') return -1; n=n*26+ch.charCodeAt(0)-64; } return n-1; }\nconst rows = $input.all().map(i=>{\n  const j=i.json; let arr=[];\n  if(Array.isArray(j.row)) arr=j.row.slice();\n  else if(Array.isArray(j)) arr=j.slice();\n  else for(const k of Object.keys(j)){ const ix=colIdx(k); if(ix>=0) arr[ix]=j[k]; }\n  return arr;\n});\nconst norm = s => String(s??'').replace(/\\s+/g,' ').trim();\nconst num = v => { if(typeof v==='number') return v; const n=parseFloat(String(v??'').replace(/\\s/g,'').replace(',','.')); return isNaN(n)?0:n; };\nconst L = rows.map(r=>norm(r[0]));\n\n// Это не месячный (посуточный) отчёт — молча выходим (сменные и недельные файлы разбирает другой воркфлоу)\nif(!L.slice(0,8).some(x=>/^Посуточный отч[её]т/i.test(x))) return [];\n\nconst find  = (label, from=0) => { for(let i=from;i<L.length;i++) if(L[i]===label) return i; return -1; };\nconst findP = (prefix, from=0) => { for(let i=from;i<L.length;i++) if(L[i].startsWith(prefix)) return i; return -1; };\nconst need = (i, name) => { if(i<0) throw new Error('В файле не найдена строка «'+name+'». Формат отчёта изменился?'); return i; };\n\n// ---------- даты (колонки дней) ----------\nconst toDate = v => {\n  let y,m,d;\n  if(typeof v==='number' && v>20000){ const t=new Date(Math.round((v-25569)*86400000)); y=t.getUTCFullYear(); m=t.getUTCMonth()+1; d=t.getUTCDate(); }\n  else { const s=norm(v); let x=s.match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})/); if(x){ d=+x[1]; m=+x[2]; y=+x[3]; } else { x=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/); if(!x) return null; y=+x[1]; m=+x[2]; d=+x[3]; } }\n  const dow=(new Date(Date.UTC(y,m-1,d)).getUTCDay()+6)%7; // 0=Пн … 6=Вс\n  return {y,m,d,dow};\n};\nconst iDate = need(find('Дата'),'Дата');\nconst cols=[], dates=[];\nfor(let c=1;c<rows[iDate].length;c++){ const d=toDate(rows[iDate][c]); if(d){ cols.push(c); dates.push(d); } }\nif(!cols.length) throw new Error('Не нашёл колонки с датами в строке «Дата».');\nconst ser = (i)=> i<0 ? cols.map(()=>0) : cols.map(c=>num(rows[i][c]));\nconst S = a=>a.reduce((x,y)=>x+y,0);\nconst sum = i=>S(ser(i));\n\nconst Y=dates[0].y, M=dates[0].m, key=`${Y}-${String(M).padStart(2,'0')}`;\nconst monthsN=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];\nconst monthsD=['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];\nconst monthsS=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];\nconst dowS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];\nconst label = `${monthsN[M-1]} ${Y}`;\nconst nDays = dates.length;\nconst expected = new Date(Date.UTC(Y,M,0)).getUTCDate();\n\n// ---------- строки отчёта ----------\nconst iRev = need(find('Итого выручка'),'Итого выручка');\nconst iAdm = need(find('Касса администратора'),'Касса администратора');\nconst iLK  = find('Личный кабинет'), iMP = find('Мобильное приложение');\nconst iChecks = need(find('Количество чеков всего'),'Количество чеков всего');\nconst iOps = need(find('По операциям'),'По операциям');\nconst iSumChecks = need(find('Сумма чеков всего', iOps),'Сумма чеков всего');\nconst iCash = find('Наличными на кассе администратора', iSumChecks);\nconst iCard = find('Картой на кассе администратора', iSumChecks);\nconst iQR   = find('QR', iSumChecks);\nconst iOnl  = find('Картой онлайн', iSumChecks);\nconst iTC   = find('Наличными на терминале самообслуживания', iSumChecks);\nconst iTA   = find('Эквайринг на терминале самообслуживания', iSumChecks);\nconst iIncas = find('Инкассации');\nconst iBal = find('Статистика по балансам');\nconst iBonusIn = find('Пополнения бонусного баланса', iBal);\nconst iCashback = iBonusIn>=0 ? find('Кешбек по сессии', iBonusIn) : -1;\nconst iBonusOut = find('Списания бонусного баланса', iBal);\nconst iRetM = find('Возвраты денежного баланса', iBal);\nconst iRetB = find('Возвраты бонусного баланса', iBal);\nconst iG = need(find('Статистика по гостям'),'Статистика по гостям');\nconst iReg = find('Регистрации', iG), iNew = find('Новые гости', iG), iUniq = find('Уникальных гостей', iG);\nconst iPC = need(find('Статистика по ПК'),'Статистика по ПК');\nconst iLoad = findP('Загрузка в %', iPC);\nconst iHour = find('Средняя стоимость часа', iPC), iHourNB = find('Средняя стоимость часа без бонусов', iPC);\nconst iPcMin = find('Минуты сессий на ПК', iPC), iTvMin = find('Минуты сессий на ТВ', iPC);\nconst iSess = find('Активированных сессий', iPC), iBookA = find('Активированных бронирований', iPC), iBookM = find('Сделанных бронирований', iPC);\nconst iGen = need(find('Общая статистика'),'Общая статистика');\nconst iQty = find('Количество проданных товаров', iGen), iGoods = need(find('Сумма проданных товаров', iGen),'Сумма проданных товаров');\n\n// напитки: блок «Товары» внутри «Статистика по операциям»\nconst iOpsStat = need(find('Статистика по операциям'),'Статистика по операциям');\nconst iGB = find('Товары', iOpsStat);\nlet drinksAll = [];\nif(iGB>=0){\n  for(let i=iGB+1;i<L.length;i++){\n    if(['Услуги','Возвраты','Расходы','Инкассации'].includes(L[i])) break;\n    if(!L[i]) continue;\n    drinksAll.push({n:L[i], v:Math.round(sum(i))});\n  }\n}\n\n// ---------- метрики ----------\nconst revDay = ser(iRev);\nconst rev = S(revDay);\nconst checks = sum(iChecks);\nconst avgCheck = checks? rev/checks : 0;\nconst chan = { adm:sum(iAdm), lk:sum(iLK), mp:sum(iMP) };\nconst meth = { cash:sum(iCash), card:sum(iCard), qr:sum(iQR), onl:sum(iOnl) };\nconst pcMin = sum(iPcMin);\nconst hourW = (iHour>=0 && pcMin) ? S(ser(iHour).map((v,i)=>v*ser(iPcMin)[i]))/pcMin : 0;\nconst hourNB = (iHourNB>=0 && pcMin) ? S(ser(iHourNB).map((v,i)=>v*ser(iPcMin)[i]))/pcMin : 0;\nconst loadAvg = iLoad>=0 ? S(ser(iLoad))/nDays : 0;\nconst goodsSum = sum(iGoods), goodsQty = iQty>=0? sum(iQty):0;\nconst choc = drinksAll.filter(x=>/шоколад/i.test(x.n));\nconst drinks = drinksAll.filter(x=>!/шоколад/i.test(x.n) && x.v>0).sort((a,b)=>b.v-a.v);\nconst chocSum = S(choc.map(x=>x.v));\nconst drinksSum = S(drinks.map(x=>x.v));\n\n// дни недели, недели\nconst dowSum=Array(7).fill(0), dowCnt=Array(7).fill(0);\ndates.forEach((d,i)=>{ dowSum[d.dow]+=revDay[i]; dowCnt[d.dow]++; });\nconst dowAvg = dowSum.map((s,i)=>dowCnt[i]? s/dowCnt[i] : 0);\nconst wkIdx = dates.map((d,i)=>i).filter(i=>dates[i].dow<5), weIdx = dates.map((d,i)=>i).filter(i=>dates[i].dow>=5);\nconst wkAvg = wkIdx.length? S(wkIdx.map(i=>revDay[i]))/wkIdx.length : 0;\nconst weAvg = weIdx.length? S(weIdx.map(i=>revDay[i]))/weIdx.length : 0;\nconst weeks=[]; { let cur=null; dates.forEach((d,i)=>{ if(!cur || d.dow===0){ cur={a:i,b:i}; weeks.push(cur); } cur.b=i; }); }\nconst weekRows = weeks.map(w=>{ const s=S(revDay.slice(w.a,w.b+1)); const n=w.b-w.a+1; const da=dates[w.a], db=dates[w.b];\n  const nm = (da.d===db.d)? `${da.d} ${monthsS[M-1]}` : `${da.d}–${db.d} ${monthsS[M-1]}`; return {n:nm, s:Math.round(s), days:n, avg:Math.round(s/n)}; });\nconst order = revDay.map((v,i)=>i).sort((a,b)=>revDay[b]-revDay[a]);\nconst best = {i:order[0], v:revDay[order[0]]}, worst = {i:order[order.length-1], v:revDay[order[order.length-1]]};\nconst dayStr = i => `${String(dates[i].d).padStart(2,'0')}.${String(dates[i].m).padStart(2,'0')} (${dowS[dates[i].dow]})`;\nconst bi = dowAvg.map((v,i)=>i).filter(i=>dowCnt[i]).sort((a,b)=>dowAvg[b]-dowAvg[a]);\nconst strongD = bi[0], weakD = bi[bi.length-1];\n\n// ---------- сверка ----------\nconst warns=[];\nconst chanSum = chan.adm+chan.lk+chan.mp;\nif(Math.abs(rev-chanSum)>nDays) warns.push(`выручка ${rub0(rev)} ≠ сумма каналов ${rub0(chanSum)}`);\nconst methSum = meth.cash+meth.card+meth.qr+meth.onl+sum(iTC)+sum(iTA);\nif(Math.abs(rev-methSum)>nDays) warns.push(`выручка ${rub0(rev)} ≠ сумма способов оплаты ${rub0(methSum)}`);\nif(drinksAll.length && Math.abs(goodsSum-S(drinksAll.map(x=>x.v)))>nDays) warns.push(`товары ${rub0(goodsSum)} ≠ сумма позиций ${rub0(S(drinksAll.map(x=>x.v)))}`);\nfunction rub0(x){ return Math.round(x)+' ₽'; }\n\n// ---------- данные для таблицы ----------\nconst data = {\n  key, label, days:nDays, expected, rev:Math.round(rev), checks, avgCheck:+avgCheck.toFixed(2),\n  perDay:Math.round(rev/nDays), chan:{adm:Math.round(chan.adm),lk:Math.round(chan.lk),mp:Math.round(chan.mp)},\n  meth:{cash:Math.round(meth.cash),card:Math.round(meth.card),qr:Math.round(meth.qr),onl:Math.round(meth.onl)},\n  incas:Math.round(sum(iIncas)), guests:sum(iUniq), newGuests:sum(iNew), regs:sum(iReg), load:+loadAvg.toFixed(2),\n  hour:Math.round(hourW), hourNB:Math.round(hourNB), pcMin:Math.round(pcMin), tvMin:Math.round(sum(iTvMin)), sessions:sum(iSess),\n  bookA:sum(iBookA), bookM:sum(iBookM), goodsSum:Math.round(goodsSum), goodsQty, drinks, chocSum, drinksSum,\n  wkAvg:Math.round(wkAvg), weAvg:Math.round(weAvg), dowAvg:dowAvg.map(Math.round), weeks:weekRows,\n  best:{d:dayStr(best.i),v:Math.round(best.v)}, worst:{d:dayStr(worst.i),v:Math.round(worst.v)},\n  bonusIn:Math.round(sum(iBonusIn)), bonusOut:Math.round(sum(iBonusOut)), cashback:Math.round(sum(iCashback)),\n  retM:Math.round(sum(iRetM)), retB:Math.round(sum(iRetB))\n};\n\n// ---------- прошлый месяц из таблицы ----------\nlet prev=null, hadSame=false;\ntry{\n  const stored = $('Прошлые месяцы (сводка)').first().json.rows || [];\n  const parsed = [];\n  for(const r of stored){ try{ const o=JSON.parse(r.data); if(o && o.key) parsed.push(o); }catch(e){} }\n  hadSame = parsed.some(o=>o.key===key);\n  const older = parsed.filter(o=>o.key<key).sort((a,b)=>a.key<b.key?1:-1);\n  prev = older[0] || null;\n}catch(e){ prev=null; }\n\n// ---------- форматирование ----------\nconst f=(x,d=0)=>{ const neg=x<0; const s=Math.abs(x).toFixed(d); let [a,b]=s.split('.'); a=a.replace(/\\B(?=(\\d{3})+(?!\\d))/g,' '); return (neg?'−':'')+a+(b?','+b:''); };\nconst rub=x=>`${f(Math.round(x))} ₽`;\nconst e=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst pct=(a,b)=>b?(a/b*100):0;\nconst dl=(a,b,d=0,unit='')=>{ if(!prev||b==null||b===0) return ''; const diff=a-b; if(Math.abs(diff)<Math.pow(10,-d)/2) return ' ➖ без изменений'; return ` ${diff>0?'▲ +':'▼ −'}${f(Math.abs(diff),d)}${unit} (${diff>0?'+':'−'}${f(Math.abs(pct(diff,Math.abs(b))),1)}%)`; };\nconst dpp=(a,b)=>{ if(!prev) return ''; const d=a-b; if(Math.abs(d)<0.05) return ' ➖'; return ` ${d>0?'▲ +':'▼ −'}${f(Math.abs(d),1)} п.п.`; };\nconst hrs=m=>`${f(m/60,1)} ч`;\nconst medal=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];\nconst pm = prev ? monthsD[parseInt(prev.key.slice(5,7),10)-1] : '';\nconst sameLen = !prev || prev.days===nDays;\nconst perDay = rev/nDays;\n\nconst sec=[]; // секции сообщения\nconst add=(...lines)=>sec.push(lines.join('\\n'));\n\nadd(`📅 <b>Отчёт за месяц: ${e(label)}</b>`,\n    `🗓 ${String(dates[0].d).padStart(2,'0')}.${String(dates[0].m).padStart(2,'0')}.${Y} → ${String(dates[nDays-1].d).padStart(2,'0')}.${String(dates[nDays-1].m).padStart(2,'0')}.${Y} · дней: ${nDays}`,\n    prev ? `🆚 Сравнение с прошлым месяцем: <b>${e(prev.label)}</b>` : `🆚 Сравнить пока не с чем: прошлого месяца нет в таблице`);\n\nadd(`💰 <b>Выручка: ${rub(rev)}</b>${dl(rev,prev&&prev.rev)}`,\n    `📆 В среднем за день: <b>${rub(perDay)}</b>${dl(perDay,prev&&prev.perDay)}`,\n    `🧾 Чеков: <b>${f(checks)}</b>${dl(checks,prev&&prev.checks)}`,\n    `🧮 Средний чек: <b>${f(avgCheck,2)} ₽</b>${dl(avgCheck,prev&&prev.avgCheck,2)}`,\n    `🔝 Лучший день: ${dayStr(best.i)} — ${rub(best.v)}`,\n    `🔻 Слабый день: ${dayStr(worst.i)} — ${rub(worst.v)}`);\n\n{ const L2=['📈 <b>Динамика по неделям</b>'];\n  weekRows.forEach((w,i)=>L2.push(`${i===weekRows.length-1?'└':'├'} ${w.n}: ${rub(w.s)} · ${rub(w.avg)}/день${w.days<7?` (${w.days} дн.)`:''}`));\n  add(...L2); }\n\nadd(`📊 <b>Дни недели</b> (средняя выручка за день)`,\n    `🟢 Выходные (Сб–Вс): <b>${rub(weAvg)}</b>${dl(weAvg,prev&&prev.weAvg)}`,\n    `🔵 Будни (Пн–Пт): <b>${rub(wkAvg)}</b>${dl(wkAvg,prev&&prev.wkAvg)}`,\n    `🔥 Сильнее всего: ${dowS[strongD]} — ${rub(dowAvg[strongD])}`,\n    `🥶 Слабее всего: ${dowS[weakD]} — ${rub(dowAvg[weakD])}`);\n\n{ const L3=['💳 <b>Структура оплат</b>'];\n  const chs=[['🏧 Касса админа','adm'],['🖥 Личный кабинет','lk'],['📱 Приложение','mp']];\n  for(const [nm,k] of chs){ if(chan[k]<=0) continue; L3.push(`${nm}: ${rub(chan[k])} (${f(pct(chan[k],rev),1)}%)${prev&&prev.chan? dpp(pct(chan[k],rev),pct(prev.chan[k],prev.rev)):''}`);\n    if(k==='adm'){ L3.push(`   ├ 💵 Наличные: ${rub(meth.cash)}`); L3.push(`   └ 💳 Карта: ${rub(meth.card)}`); } }\n  L3.push('');\n  L3.push('🔀 <b>Способы оплаты</b> (доля)');\n  const ms=[['🔳 QR','qr'],['💳 Карта на кассе','card'],['💵 Наличные','cash'],['🌐 Карта онлайн','onl']];\n  ms.forEach(([nm,k],i)=>{ L3.push(`${nm}: ${rub(meth[k])} (${f(pct(meth[k],rev),1)}%)${prev&&prev.meth? dpp(pct(meth[k],rev),pct(prev.meth[k],prev.rev)):''}`); });\n  L3.push(`🏦 Инкассировано: <b>${rub(data.incas)}</b>${dl(data.incas,prev&&prev.incas)}`);\n  add(...L3); }\n\nadd('🎮 <b>Клуб</b>',\n    `👥 Гостей (сумма по дням): <b>${f(data.guests)}</b> · в среднем ${f(data.guests/nDays)} в день${prev&&prev.guests? dl(data.guests/nDays,prev.guests/prev.days,0):''}`,\n    `🆕 Новых гостей: <b>${f(data.newGuests)}</b> (регистраций ${f(data.regs)}) · в день ${f(data.newGuests/nDays,1)}${prev? dl(data.newGuests/nDays,prev.newGuests/prev.days,1):''}`,\n    `⚡ Средняя загрузка: <b>${f(loadAvg,1)}%</b>${prev? dpp(loadAvg,prev.load):''}`,\n    `🕹 Сессий: ${f(data.sessions)} · в день ${f(data.sessions/nDays)}${prev? dl(data.sessions/nDays,prev.sessions/prev.days,0):''}`,\n    `🖥 Время ПК: ${hrs(data.pcMin)}${data.tvMin?` · 📺 ТВ: ${hrs(data.tvMin)}`:''}`,\n    `⏱ Ср. стоимость часа: ${f(data.hour)} ₽${dl(data.hour,prev&&prev.hour)} (без бонусов ${f(data.hourNB)} ₽)`,\n    `📆 Бронирований: ${f(data.bookM)} (активировано ${f(data.bookA)})`);\n\nadd('🥤 <b>Бар</b>',\n    `🛒 Продано: <b>${f(goodsQty)} шт.</b> на <b>${rub(goodsSum)}</b>${dl(goodsSum,prev&&prev.goodsSum)}`,\n    `📈 Доля в выручке: ${f(pct(goodsSum,rev),1)}%${prev? dpp(pct(goodsSum,rev),pct(prev.goodsSum,prev.rev)):''}`,\n    goodsQty? `🧾 В среднем ${f(goodsSum/goodsQty)} ₽ за позицию · ${f(goodsQty/nDays,1)} шт. в день` : '');\n\n// рейтинг напитков\n{ const L4=['🏆 <b>Рейтинг напитков за месяц</b>'];\n  const prevMap = {}; if(prev&&prev.drinks){ [...prev.drinks].sort((a,b)=>b.v-a.v).forEach((x,i)=>{ prevMap[x.n]={v:x.v,rank:i+1}; }); }\n  drinks.slice(0,10).forEach((x,i)=>{\n    const p=prevMap[x.n]; let mv='';\n    if(prev){ if(!p) mv=' 🆕'; else if(p.rank>i+1) mv=` ▲${p.rank-(i+1)}`; else if(p.rank<i+1) mv=` ▼${(i+1)-p.rank}`; }\n    L4.push(`${medal[i]} <b>${e(x.n)}</b>${mv}`);\n    L4.push(`   └ ${rub(x.v)} · ${f(pct(x.v,drinksSum),1)}% напитков${p? dl(x.v,p.v,0,' ₽'):''}`);\n  });\n  add(...L4);\n  const tail=drinks.slice(-3).reverse();\n  const L5=[];\n  if(drinks.length>10) L5.push(`🐢 Аутсайдеры: ${tail.map(x=>`${e(x.n)} (${rub(x.v)})`).join(', ')}`);\n  if(drinksAll.length){ const zero=drinksAll.filter(x=>x.v===0&&!/шоколад/i.test(x.n)).map(x=>x.n); if(zero.length) L5.push(`🚫 Не продавались: ${e(zero.join(', '))}`); }\n  if(chocSum) L5.push(`🍫 Шоколадки отдельно: ${rub(chocSum)}`);\n  L5.push(`🥤 Всего напитков: ${rub(drinksSum)}${dl(drinksSum,prev&&prev.drinksSum)}`);\n  add(...L5);\n}\n\nadd('🔄 <b>Возвраты и бонусы</b>',\n    `↩️ Возвраты: ${rub(data.retM)} + бонусами ${rub(data.retB)}`,\n    `➕ Бонусов начислено: ${rub(data.bonusIn)}${dl(data.bonusIn,prev&&prev.bonusIn)}`,\n    `➖ Бонусов списано: ${rub(data.bonusOut)}${dl(data.bonusOut,prev&&prev.bonusOut)}`,\n    `🎁 Кешбек по сессиям: ${rub(data.cashback)}`);\n\n// ---------- аналитика к прошлому месяцу ----------\nconst concl=[];\nconst numSecCount = sec.length;\nif(prev){\n  const A=['🔍 <b>Что изменилось к '+e(pm)+'</b>'];\n  const diff=rev-prev.rev;\n  const volume=(checks-prev.checks)*prev.avgCheck, price=(avgCheck-prev.avgCheck)*checks;\n  A.push(`${diff>=0?'📈':'📉'} Выручка ${diff>=0?'выросла':'снизилась'} на ${rub(Math.abs(diff))}${sameLen?'':` (в месяце ${nDays} дн. против ${prev.days})`}`);\n  A.push(`   ├ 🧾 за счёт числа чеков: ${volume>=0?'+':'−'}${rub(Math.abs(volume))}`);\n  A.push(`   └ 🧮 за счёт среднего чека: ${price>=0?'+':'−'}${rub(Math.abs(price))}`);\n  const chDiff=[['🏧 Касса админа','adm'],['🖥 Личный кабинет','lk'],['📱 Приложение','mp']].map(([nm,k])=>({nm,d:chan[k]-prev.chan[k]})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d))[0];\n  if(chDiff && Math.abs(chDiff.d)>0) A.push(`💳 Главное изменение по каналам: ${chDiff.nm} ${chDiff.d>=0?'+':'−'}${rub(Math.abs(chDiff.d))}`);\n  if(prev.drinks){ const pmap={}; prev.drinks.forEach(x=>pmap[x.n]=x.v);\n    const dd=drinks.map(x=>({n:x.n,d:x.v-(pmap[x.n]||0),v:x.v,pv:pmap[x.n]||0}));\n    prev.drinks.forEach(x=>{ if(!drinks.find(y=>y.n===x.n)) dd.push({n:x.n,d:-x.v,v:0,pv:x.v}); });\n    const up=dd.filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,2), down=dd.filter(x=>x.d<0).sort((a,b)=>a.d-b.d).slice(0,2);\n    if(up.length) A.push(`🚀 Выросли на баре: ${up.map(x=>`${e(x.n)} +${rub(x.d)}`).join(', ')}`);\n    if(down.length) A.push(`🔻 Просели на баре: ${down.map(x=>`${e(x.n)} −${rub(Math.abs(x.d))}`).join(', ')}`);\n  }\n  add(...A);\n}\n\nconst p=[];\nif(prev){\n  const dd=pct(perDay-prev.perDay,prev.perDay);\n  if(dd>=15) p.push(`🔥 Сильный месяц: в день выручка ${rub(perDay)}, это на ${f(dd,1)}% выше, чем в ${e(prev.label)}.`);\n  else if(dd>=3) p.push(`👍 Месяц лучше прошлого: ${rub(perDay)} в день (+${f(dd,1)}%).`);\n  else if(dd>-3) p.push(`➖ Месяц в ровном темпе: ${rub(perDay)} в день, почти как в ${e(prev.label)} (${dd>0?'+':''}${f(dd,1)}%).`);\n  else if(dd>-15) p.push(`📉 Месяц слабее прошлого: ${rub(perDay)} в день (${f(dd,1)}%).`);\n  else p.push(`🥶 Заметная просадка: ${rub(perDay)} в день, это ${f(dd,1)}% к ${pm}.`);\n  const dc=checks/nDays-prev.checks/prev.days, da=avgCheck-prev.avgCheck;\n  if(dc>0&&da>0) p.push('🧾 Чеков в день больше и средний чек вырос — растём и по трафику, и по качеству 💪');\n  else if(dc>0&&da<=0) p.push('🧾 Чеков в день больше, но средний чек просел — деньги дал объём, а не чек.');\n  else if(dc<=0&&da>0) p.push('🧾 Чеков в день меньше, зато средний чек выше — гости тратят больше.');\n  else p.push('🧾 И чеков в день, и средний чек ниже прошлого месяца — слабовато.');\n  const gn=data.newGuests/nDays-prev.newGuests/prev.days;\n  if(gn>0.05) p.push(`🆕 Новых гостей в день больше: ${f(data.newGuests/nDays,1)} против ${f(prev.newGuests/prev.days,1)} 🙌`);\n  else if(gn<-0.05) p.push(`🆕 Новых гостей в день меньше: ${f(data.newGuests/nDays,1)} против ${f(prev.newGuests/prev.days,1)} — можно подтолкнуть акциями.`);\n  if(loadAvg-prev.load>=2) p.push(`⚡ Загрузка выросла до ${f(loadAvg,1)}%.`); else if(loadAvg-prev.load<=-2) p.push(`⚡ Загрузка снизилась до ${f(loadAvg,1)}%.`);\n} else {\n  p.push(`💰 ${e(label.charAt(0).toUpperCase()+label.slice(1))} закрыт на ${rub(rev)}: в среднем ${rub(perDay)} в день. Сравнить пока не с чем — со следующего месяца здесь появятся стрелки ▲▼.`);\n}\nif(wkAvg>0) p.push(`🔥 Выходные приносят на ${f(pct(weAvg-wkAvg,wkAvg),0)}% больше будней: ${rub(weAvg)} против ${rub(wkAvg)} в день.`);\nconst full = weekRows.filter(w=>w.days===7);\nif(full.length>=2){ const bw=[...full].sort((a,b)=>b.avg-a.avg)[0]; const lw=weekRows[weekRows.length-1];\n  if(lw.days>=4 && lw.avg<bw.avg*0.95) p.push(`📉 Последняя неделя (${lw.n}) просела до ${rub(lw.avg)}/день против ${rub(bw.avg)}/день в лучшую (${bw.n}).`); }\np.push(`🔝 Рекордный день — ${dayStr(best.i)}: ${rub(best.v)}; самый тихий — ${dayStr(worst.i)}: ${rub(worst.v)}.`);\nif(drinks.length>=2) p.push(`🥤 Бар дал ${f(pct(goodsSum,rev),1)}% выручки. Лидеры: ${e(drinks[0].n)} и ${e(drinks[1].n)} — вместе ${f(pct(drinks[0].v+drinks[1].v,drinksSum),1)}% напитков.`);\nadd('📝 <b>Итог</b>\\n'+p.join('\\n'));\n\n// ---------- предупреждения и разбивка на сообщения ----------\nconst head=[];\nif(warns.length) head.push(`⚠️ <b>Сверка не сошлась</b> (${e(warns.join('; '))}). Проверьте файл ${e(info.fileName)}.`);\nif(nDays<expected) head.push(`⚠️ <b>Неполный месяц</b>: в файле ${nDays} дн. из ${expected}. Сравнение идёт в пересчёте на день.`);\nif(hadSame) head.push(`🔁 Этот месяц уже был в таблице — данные обновлены.`);\nconst fullText = (head.length? head.join('\\n')+'\\n\\n' : '') + sec.filter(Boolean).join('\\n\\n');\n\nconst LIM=3800;\nconst pack=(arr)=>{ const out=[]; let cur=''; for(const x of arr){ if(!x) continue; if(cur && (cur.length+2+x.length)>LIM){ out.push(cur); cur=x; } else cur = cur? cur+'\\n\\n'+x : x; } if(cur) out.push(cur); return out; };\nconst numSec = (head.length?[head.join('\\n')]:[]).concat(sec.slice(0,numSecCount));\nconst anSec = sec.slice(numSecCount);               // «Что изменилось» + «Итог»\nlet parts = pack(numSec);\nif(prev){ parts = parts.concat(pack(anSec)); }       // аналитика отдельным сообщением\nelse { const last=parts.pop()||''; parts = parts.concat(pack([last].concat(anSec))); }\n\nreturn parts.map((t,i)=>({json:{ text: parts.length>1 ? t+`\\n\\n<i>Часть ${i+1} из ${parts.length}</i>` : t, part:i+1, total:parts.length, key, label, fullText, data: JSON.stringify(data) }}));\n"
+      },
+      "id": "m7",
+      "name": "Расчёт и дайджест",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "id": "m8",
+      "name": "Отправить дайджест",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Месяц": "={{ $('Расчёт и дайджест').first().json.key }}",
+            "Название": "={{ $('Расчёт и дайджест').first().json.label }}",
+            "Дайджест": "={{ $('Расчёт и дайджест').first().json.fullText }}",
+            "Данные": "={{ $('Расчёт и дайджест').first().json.data }}"
+          },
+          "matchingColumns": [
+            "Месяц"
+          ],
+          "schema": [
+            {
+              "id": "Месяц",
+              "displayName": "Месяц",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Название",
+              "displayName": "Название",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Дайджест",
+              "displayName": "Дайджест",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Данные",
+              "displayName": "Данные",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "m9",
+      "name": "Сохранить месяц",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Классификация",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Классификация": {
+      "main": [
+        [
+          {
+            "node": "Прошлые месяцы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Прошлые месяцы": {
+      "main": [
+        [
+          {
+            "node": "Прошлые месяцы (сводка)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Прошлые месяцы (сводка)": {
+      "main": [
+        [
+          {
+            "node": "Скачать файл",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Скачать файл": {
+      "main": [
+        [
+          {
+            "node": "Читать xlsx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Читать xlsx": {
+      "main": [
+        [
+          {
+            "node": "Расчёт и дайджест",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт и дайджест": {
+      "main": [
+        [
+          {
+            "node": "Отправить дайджест",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить дайджест": {
+      "main": [
+        [
+          {
+            "node": "Сохранить месяц",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "active": false
+}

@@ -490,7 +490,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       },
@@ -528,7 +528,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       },
@@ -551,7 +551,7 @@
       "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       }
@@ -573,7 +573,7 @@
       "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       }
@@ -600,7 +600,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       },
@@ -623,7 +623,7 @@
       "webhookId": "f9f4f3b0-dc65-450f-ad7f-8945c41d26e0",
       "credentials": {
         "telegramApi": {
-          "id": "xLrORzxQsFMcWYWq",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Ассистент ВИК"
         }
       }
@@ -955,6 +955,5 @@
     "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
   },
   "nodeGroups": [],
-  "id": "AHLet6rZyr1rVIU7",
   "tags": []
 }

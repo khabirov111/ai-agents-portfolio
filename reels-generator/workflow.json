@@ -1,0 +1,202 @@
+{
+  "name": "reels (идеи рилсов, v2)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -220,
+        -100
+      ],
+      "id": "r-sched",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        100
+      ],
+      "id": "r-manual",
+      "name": "Ручной запуск (тест)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== Контекст + «случайные ингредиенты» для идеи рилса =====\nconst TZ = 'Asia/Yekaterinburg';                       // Октябрьский (РБ)\nconst now = new Date();\nconst wd = now.toLocaleDateString('ru-RU', { weekday: 'long', timeZone: TZ });\nconst dateStr = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ });\nconst hour = parseInt(now.toLocaleTimeString('ru-RU', { hour: '2-digit', hour12: false, timeZone: TZ }));\nconst part = hour < 6 ? 'глубокая ночь' : hour < 12 ? 'утро' : hour < 18 ? 'день' : 'вечер';\nconst month = parseInt(now.toLocaleDateString('en-US', { month: 'numeric', timeZone: TZ }));\nconst season = [12,1,2].includes(month) ? 'зима, мороз, тёмные вечера' : [3,4,5].includes(month) ? 'весна, слякоть' : [6,7,8].includes(month) ? 'лето, жара' : 'осень, дожди, темнеет рано';\n\n// ближайшие поводы (в пределах 16 дней)\nconst y = parseInt(now.toLocaleDateString('en-US', { year: 'numeric', timeZone: TZ }));\nconst nthWeekday = (year, m, wdIdx, n) => { let c = 0; for (let d = 1; d <= 31; d++) { const dt = new Date(Date.UTC(year, m, d)); if (dt.getUTCMonth() !== m) break; if (dt.getUTCDay() === wdIdx && ++c === n) return dt; } };\nconst lastSunday = (year, m) => { for (let d = 31; d >= 1; d--) { const dt = new Date(Date.UTC(year, m, d)); if (dt.getUTCMonth() === m && dt.getUTCDay() === 0) return dt; } };\nconst events = [];\nfor (const yy of [y, y + 1]) events.push(\n  ['Новый год', new Date(Date.UTC(yy, 11, 31))], ['Старт зимней сессии у студентов', new Date(Date.UTC(yy, 0, 12))],\n  ['Татьянин день (День студента)', new Date(Date.UTC(yy, 0, 25))], ['День защитника Отечества 23 февраля', new Date(Date.UTC(yy, 1, 23))],\n  ['8 Марта', new Date(Date.UTC(yy, 2, 8))], ['1 сентября', new Date(Date.UTC(yy, 8, 1))], ['Хэллоуин', new Date(Date.UTC(yy, 9, 31))],\n  ['Чёрная пятница', nthWeekday(yy, 10, 5, 4)], ['День матери', lastSunday(yy, 10)], ['Начало зимы', new Date(Date.UTC(yy, 11, 1))],\n  ['Начало каникул', new Date(Date.UTC(yy, 11, 28))]);\nconst today0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());\nconst near = events.filter(([, d]) => d && (d.getTime() - today0) / 86400000 >= -1 && (d.getTime() - today0) / 86400000 <= 16)\n  .map(([n, d]) => `${n} (через ${Math.max(0, Math.round((d.getTime() - today0) / 86400000))} дн.)`);\n\nconst pick = a => a[Math.floor(Math.random() * a.length)];\nconst pickN = (a, n) => { const c = [...a], r = []; while (r.length < n && c.length) r.push(c.splice(Math.floor(Math.random() * c.length), 1)[0]); return r; };\n\nconst FORMATS = [\n  'POV: «ты — …» (съёмка от первого лица)', '«Ожидание vs реальность»', 'Мини-сценка с неожиданной развязкой в последней секунде',\n  'Быстрый челлендж с таймером на экране', '«Угадай по звуку» (клик мышки, крик, кулер, энергетик)', 'Тренд-формат «до / после»',\n  'Реакция администратора на дикую просьбу гостя', 'ASMR клуба (клики, подсветка, баночка энергетика)', 'Секретный «уровень» клуба — квест для гостей',\n  'Дуэль «админ против гостя» на скорость/меткость', 'Фейковый «документальный фильм» о клубе с пафосным закадровым голосом',\n  'Переход-«телепорт» из реальности в игру', '«Типы гостей клуба» (узнаваемые персонажи)', 'Один дубль без склеек, обязательно удачная концовка',\n  'Лайфхак для геймеров (быстро и полезно)', 'Слоу-мо «клатч» с эпичной подачей', 'Ответ на «комментарий подписчика» (идею можно взять из типичных вопросов)'];\nconst HEROES = ['администратор в одиночку', 'два администратора', 'гость-новичок, который впервые в клубе', 'компания друзей-школьников', 'студент перед сессией',\n  'опытный киберкотлет, который «всех знает»', 'папа, пришедший «просто посмотреть»', 'бармен/админ и его «секретный рецепт»'];\nconst PAINS = ['«ещё одна катка» и время улетело', 'лаг в самый важный момент', 'клатч 1 против 5', 'гость забыл, зачем пришёл — и играет 6 часов', 'мама звонит, а ты в рейтинге',\n  'тимейт ушёл в афк', 'спор «кто лучше» решается дуэлью', 'новичок случайно делает легендарный ход', 'энергетик закончился на самом интересном',\n  'соседняя клава щёлкает громче всех', 'бонусы на карте и «хватит ещё на час»', 'ночная смена: клуб почти пуст, но он живой'];\nconst MOODS = ['самоирония', 'азарт', 'неожиданность', 'уютный вайб', 'вау-эффект', 'тёплый юмор', 'драйв', 'лёгкая интрига'];\nconst LIMITS = ['снять за 15 минут', 'снять одним дублем', 'без лиц — только руки и экраны', 'снимается на один телефон без штатива', 'нужен максимум один гость',\n  'без слов, только текст на экране', 'использовать подсветку клуба как главный визуал', 'уложиться в 12–15 секунд'];\nconst GAMES = ['CS2', 'Dota 2', 'PUBG', 'Valorant', 'Fortnite', 'GTA V / онлайн-шутеры', 'FIFA / EA FC', 'Minecraft', 'без привязки к конкретной игре (про атмосферу клуба)'];\n\nconst sd = $getWorkflowStaticData('global');\nconst history = (sd.titles || []).slice(-30);\n\nconst seed = { format: pick(FORMATS), hero: pick(HEROES), pain: pick(PAINS), mood: pick(MOODS), limit: pick(LIMITS), game: pick(GAMES) };\nconst prompt = `Придумай ОДНУ идею рилса для Instagram.\n\nСЕЙЧАС: ${wd}, ${dateStr}, ${part} (Октябрьский, Башкортостан). Сезон: ${season}.\nБлижайшие поводы: ${near.length ? near.join('; ') : 'особых праздников рядом нет — опирайся на сезон и день недели'}.\n\nОБЯЗАТЕЛЬНЫЕ ИНГРЕДИЕНТЫ ЭТОЙ ИДЕИ (используй их, но сделай естественно):\n• Формат: ${seed.format}\n• Герой: ${seed.hero}\n• Ситуация/боль геймера: ${seed.pain}\n• Настроение: ${seed.mood}\n• Игра: ${seed.game}\n• Ограничение съёмки: ${seed.limit}\n\nНЕ ПОВТОРЯЙ эти идеи, которые уже были (ни названия, ни суть):\n${history.length ? history.map(t => '- ' + t).join('\\n') : '- (пока ничего)'}`;\nreturn [{ json: { prompt, seed, now: `${wd}, ${dateStr}, ${part}` } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "r-seed",
+      "name": "Контекст и ингредиенты"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {
+          "systemMessage": "Ты — креативный сценарист коротких вертикальных видео (Instagram Reels) для компьютерного клуба Mid в городе Октябрьский (Башкортостан). Аудитория: школьники, студенты, молодые геймеры 14–30 лет, их друзья и семьи. Снимают силами администраторов на телефон, без бюджета и без актёров.\n\nЦЕЛЬ: одна яркая идея, которую хочется досмотреть, переслать другу и прокомментировать. Не «про клуб вообще», а конкретная сценка с неожиданным поворотом.\n\nПРИНЦИПЫ, ПО КОТОРЫМ ИДЕЯ ПОЛУЧАЕТСЯ СИЛЬНОЙ:\n1. Хук в первые 1–2 секунды: интрига, странный кадр, вопрос или резкое действие. Никаких «Всем привет».\n2. Узнаваемая ситуация, в которой геймер скажет «это про меня»: клатч, лаги, «ещё одна катка», рейдж, тимейты, ночные сессии, энергетики, бонусы.\n3. Один главный поворот или шутка в самом конце, чтобы видео смотрели до конца и пересматривали (идеально — зацикленная концовка).\n4. Юмор тёплый, самоироничный, на ситуациях, а не на унижении людей.\n5. Максимум конкретики: что именно в кадре, что делает герой, какой текст на экране, какой звук. Никаких общих слов вроде «покажите атмосферу клуба».\n6. Использовать данные из запроса: сезон, день недели, время суток, ближайшие поводы и обязательные ингредиенты. Если повод в запросе подходит — вплети его, если нет — не притягивай.\n7. Всё снимается в клубе силами администраторов за 15–40 минут, длина видео 10–25 секунд.\n\nЖЁСТКИЕ ПРАВИЛА:\n- Контент для всей семьи: без мата, пошлости, алкоголя, ставок, политики, религиозных тем, насмешек над людьми и опасных трюков.\n- Не использовать чужие бренды и логотипы как главную часть идеи (названия игр и энергетиков в кадре — нормально).\n- Не повторять идеи из списка «НЕ ПОВТОРЯЙ».\n- Не выдумывать цифры, акции, скидки и услуги клуба.\n- Ты не знаешь, какой звук сейчас в тренде. Поэтому для звука описывай ВАЙБ и подсказывай запрос для поиска в аудио Instagram (например: «ищи в аудио: epic cinematic drop»), а не называй «трек, который сейчас в топе».\n- Без форматирования ** и *, без пояснений, предложений помощи и вступлений. Только сама идея. Не длиннее 1300 символов.\n\nФОРМАТ ОТВЕТА (строго):\n📌 Название: короткое, цепляющее\n🪝 Хук (0–2 сек): что зритель видит и слышит сразу\n🎬 Кадры: 3–5 кадров с таймингом, например «0–2 с — …», «2–6 с — …»\n💬 Текст на экране: 2–3 короткие надписи\n🔊 Звук: вайб + запрос для поиска в аудио Instagram\n📢 CTA: провокационный вопрос для комментариев\n#️⃣ Хэштеги: 5 штук, часть про клуб/игру, часть про город\n⏱ Съёмка: время, реквизит, сложность"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "r-agent",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        320,
+        220
+      ],
+      "id": "r-ds",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Сохраняем название в историю (последние 30) и режем текст под лимит Telegram\nlet out = String($input.first().json.output || '').replace(/\\*\\*/g, '').replace(/^#{1,3}\\s*/gm, '').trim();\nif (!out) throw new Error('Агент вернул пустую идею');\nconst m = /Название:\\s*(.+)/i.exec(out);\nconst sd = $getWorkflowStaticData('global');\nsd.titles = (sd.titles || []); \nif (m) { sd.titles.push(m[1].trim().slice(0, 120)); sd.titles = sd.titles.slice(-30); }\nif (out.length > 3900) out = out.slice(0, 3900);\nreturn [{ json: { text: out } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "r-save",
+      "name": "Сохранить в историю"
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        0
+      ],
+      "id": "r-tg",
+      "name": "Send a text message",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID reels"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Контекст и ингредиенты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ручной запуск (тест)": {
+      "main": [
+        [
+          {
+            "node": "Контекст и ингредиенты",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Контекст и ингредиенты": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Сохранить в историю",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить в историю": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "tags": []
+}

@@ -3,18 +3,23 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.5,
-      "position": [-3488, 320],
+      "position": [
+        -3488,
+        320
+      ],
       "id": "a4c83da9-fa23-40a7-ac5e-f6c72e6c8f69",
       "name": "Telegram Trigger",
       "webhookId": "evelina-v4-webhook",
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -25,7 +30,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-3264, 320],
+      "position": [
+        -3264,
+        320
+      ],
       "id": "fb6d4534-b393-406c-b07b-ad8c64d32fb4",
       "name": "Normalize input"
     },
@@ -55,7 +63,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-3040, 320],
+      "position": [
+        -3040,
+        320
+      ],
       "id": "7302ea4c-e7f2-46f7-ad73-a3042e59233b",
       "name": "Is voice?"
     },
@@ -67,7 +78,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-2816, 224],
+      "position": [
+        -2816,
+        224
+      ],
       "id": "a5f0648f-1e23-43cb-9c74-e2698850da54",
       "name": "Get audio file",
       "webhookId": "eve-getaudio",
@@ -76,7 +90,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       },
@@ -92,12 +106,15 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [-2592, 320],
+      "position": [
+        -2592,
+        320
+      ],
       "id": "bc530263-8d27-4bdc-b733-17ad476fd8aa",
       "name": "Transcribe audio",
       "credentials": {
         "openAiApi": {
-          "id": "YOUR_POLZA_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Polza ai"
         }
       }
@@ -108,7 +125,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2368, 320],
+      "position": [
+        -2368,
+        320
+      ],
       "id": "4c537c02-ee8c-4f70-aa28-fc2e72165560",
       "name": "Prepare voice"
     },
@@ -118,7 +138,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2368, 512],
+      "position": [
+        -2368,
+        512
+      ],
       "id": "89e5e79c-14ea-449d-8cc5-58b725dd5e14",
       "name": "Prepare text"
     },
@@ -128,7 +151,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2144, 416],
+      "position": [
+        -2144,
+        416
+      ],
       "id": "58d17301-70cc-4b21-b6a7-a492a0038069",
       "name": "Current Date Info"
     },
@@ -148,13 +174,16 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [-1920, 416],
+      "position": [
+        -1920,
+        416
+      ],
       "id": "e90244f5-91a1-4627-8cb3-281a0c902eda",
       "name": "Read bookings",
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
@@ -165,7 +194,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1696, 416],
+      "position": [
+        -1696,
+        416
+      ],
       "id": "c487973b-4ccc-46db-a428-d7341b7f9cd3",
       "name": "Build context"
     },
@@ -179,7 +211,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-1472, 416],
+      "position": [
+        -1472,
+        416
+      ],
       "id": "13770234-b4f0-42e9-bc93-af621973ee99",
       "name": "AI Agent Evelina",
       "onError": "continueErrorOutput"
@@ -192,7 +227,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [-1344, 640],
+      "position": [
+        -1344,
+        640
+      ],
       "id": "4b1bf703-5b64-46aa-b641-eabec7ce68e1",
       "name": "Window Buffer Memory"
     },
@@ -202,7 +240,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1120, 320],
+      "position": [
+        -1120,
+        320
+      ],
       "id": "f3cc6d33-31b0-4c3f-ab95-07cf4ac55c3c",
       "name": "Parse command"
     },
@@ -231,7 +272,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-896, 320],
+      "position": [
+        -896,
+        320
+      ],
       "id": "1a1257dc-a876-41cd-a7ad-d91d7758a4bb",
       "name": "Has actions?"
     },
@@ -245,7 +289,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-672, 432],
+      "position": [
+        -672,
+        432
+      ],
       "id": "7baaec30-a9f0-4572-80cf-bc67f6b8fff3",
       "name": "Send reply (only)",
       "webhookId": "eve-replyonly",
@@ -253,7 +300,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       },
@@ -265,7 +312,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-672, 192],
+      "position": [
+        -672,
+        192
+      ],
       "id": "f3263d9a-ce02-46bc-9cd1-7b646f9ddb67",
       "name": "Split actions"
     },
@@ -373,7 +423,10 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [-448, 144],
+      "position": [
+        -448,
+        144
+      ],
       "id": "b9019d31-c265-45cf-a22c-d077bf4b2a8b",
       "name": "Switch action"
     },
@@ -383,7 +436,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-224, 0],
+      "position": [
+        -224,
+        0
+      ],
       "id": "8c45d593-020b-4009-b312-7c7d61f1dd56",
       "name": "Prepare create"
     },
@@ -416,16 +472,90 @@
             "createdAt": "={{ $json.createdAt }}",
             "updatedAt": "={{ $json.updatedAt }}"
           },
-          "matchingColumns": ["id"],
+          "matchingColumns": [
+            "id"
+          ],
           "schema": [
-            {"id": "id", "displayName": "id", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "clientName", "displayName": "clientName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "phone", "displayName": "phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "date", "displayName": "date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "time", "displayName": "time", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "createdAt", "displayName": "createdAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "updatedAt", "displayName": "updatedAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false}
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "clientName",
+              "displayName": "clientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "createdAt",
+              "displayName": "createdAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "updatedAt",
+              "displayName": "updatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
@@ -434,12 +564,15 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "id": "3dcabe05-f47b-436e-9143-9b4f40bd1618",
       "name": "Create booking",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
@@ -450,7 +583,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 0],
+      "position": [
+        224,
+        0
+      ],
       "id": "1600e143-7fc1-4f93-bb2c-4a4caf75fe39",
       "name": "Create done"
     },
@@ -460,7 +596,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-224, 192],
+      "position": [
+        -224,
+        192
+      ],
       "id": "358e11ff-d88b-4371-acd3-c6dfac2886ed",
       "name": "Prepare update"
     },
@@ -492,17 +631,101 @@
             "updatedAt": "={{ $json.updatedAt }}",
             "clientName": "={{ $json.clientName }}"
           },
-          "matchingColumns": ["id"],
+          "matchingColumns": [
+            "id"
+          ],
           "schema": [
-            {"id": "id", "displayName": "id", "required": false, "defaultMatch": true, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "clientName", "displayName": "clientName", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "phone", "displayName": "phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "date", "displayName": "date", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "time", "displayName": "time", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "status", "displayName": "status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "createdAt", "displayName": "createdAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": true},
-            {"id": "updatedAt", "displayName": "updatedAt", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
-            {"id": "row_number", "displayName": "row_number", "required": false, "defaultMatch": false, "display": true, "type": "number", "canBeUsedToMatch": true, "readOnly": true, "removed": true}
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "clientName",
+              "displayName": "clientName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "createdAt",
+              "displayName": "createdAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updatedAt",
+              "displayName": "updatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
@@ -511,12 +734,15 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [0, 192],
+      "position": [
+        0,
+        192
+      ],
       "id": "566351f7-f244-40db-b2ff-1cf3a1a9c86d",
       "name": "Update booking",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
@@ -527,7 +753,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 192],
+      "position": [
+        224,
+        192
+      ],
       "id": "9e93592c-6022-419f-812d-97ff8d1d8a89",
       "name": "Update done"
     },
@@ -537,7 +766,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 384],
+      "position": [
+        224,
+        384
+      ],
       "id": "6b7257ba-19a0-471b-af93-68d832c1dab3",
       "name": "Format list reply"
     },
@@ -547,7 +779,10 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [448, 176],
+      "position": [
+        448,
+        176
+      ],
       "id": "7564c90d-e313-4713-b117-65c47957969d",
       "name": "Merge"
     },
@@ -557,7 +792,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [672, 192],
+      "position": [
+        672,
+        192
+      ],
       "id": "524f10b6-2cf8-431f-b3dc-d2819496137f",
       "name": "Aggregate reply",
       "executeOnce": false
@@ -572,7 +810,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [896, 192],
+      "position": [
+        896,
+        192
+      ],
       "id": "974b46da-9b5e-414c-b133-4d01b04469e3",
       "name": "Send reply",
       "webhookId": "eve-reply-final",
@@ -581,7 +822,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       },
@@ -597,13 +838,16 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-1120, 512],
+      "position": [
+        -1120,
+        512
+      ],
       "id": "9811d766-4e5a-4cc0-a077-09921723ca05",
       "name": "Error handler",
       "webhookId": "eve-error",
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -618,13 +862,16 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-2592, 128],
+      "position": [
+        -2592,
+        128
+      ],
       "id": "c4623710-b129-4b7c-baef-5220ce6107dd",
       "name": "Error handler1",
       "webhookId": "eve-error",
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -639,13 +886,16 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-448, 432],
+      "position": [
+        -448,
+        432
+      ],
       "id": "142abbd7-fcce-43c0-9e74-583852c7d3e2",
       "name": "Error handler2",
       "webhookId": "eve-error",
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -660,7 +910,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 192],
+      "position": [
+        1120,
+        192
+      ],
       "id": "a928f694-9c61-42ce-b9fa-76b354d790cc",
       "name": "Error handler3",
       "webhookId": "eve-error",
@@ -668,7 +921,7 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -686,12 +939,15 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-1472, 640],
+      "position": [
+        -1472,
+        640
+      ],
       "id": "3389ddc6-26c9-4706-94e7-fc0d10ba3a62",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "YOUR_POLZA_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Polza ai"
         }
       }
@@ -700,105 +956,363 @@
   "pinData": {},
   "connections": {
     "Telegram Trigger": {
-      "main": [[{"node": "Normalize input", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Normalize input": {
-      "main": [[{"node": "Is voice?", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Is voice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is voice?": {
       "main": [
-        [{"node": "Get audio file", "type": "main", "index": 0}],
-        [{"node": "Prepare text", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Get audio file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare text",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Get audio file": {
       "main": [
-        [{"node": "Transcribe audio", "type": "main", "index": 0}],
-        [{"node": "Error handler1", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Transcribe audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error handler1",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Transcribe audio": {
-      "main": [[{"node": "Prepare voice", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Prepare voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare voice": {
-      "main": [[{"node": "Current Date Info", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Current Date Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare text": {
-      "main": [[{"node": "Current Date Info", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Current Date Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Current Date Info": {
-      "main": [[{"node": "Read bookings", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Read bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Read bookings": {
-      "main": [[{"node": "Build context", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Build context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build context": {
-      "main": [[{"node": "AI Agent Evelina", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "AI Agent Evelina",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Window Buffer Memory": {
-      "ai_memory": [[{"node": "AI Agent Evelina", "type": "ai_memory", "index": 0}]]
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Evelina",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     },
     "AI Agent Evelina": {
       "main": [
-        [{"node": "Parse command", "type": "main", "index": 0}],
-        [{"node": "Error handler", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Parse command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse command": {
-      "main": [[{"node": "Has actions?", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Has actions?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has actions?": {
       "main": [
-        [{"node": "Split actions", "type": "main", "index": 0}],
-        [{"node": "Send reply (only)", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Split actions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send reply (only)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Split actions": {
-      "main": [[{"node": "Switch action", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Switch action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Switch action": {
       "main": [
-        [{"node": "Prepare create", "type": "main", "index": 0}],
-        [{"node": "Prepare update", "type": "main", "index": 0}],
-        [{"node": "Prepare update", "type": "main", "index": 0}],
-        [{"node": "Format list reply", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Prepare create",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format list reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Prepare create": {
-      "main": [[{"node": "Create booking", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create booking": {
-      "main": [[{"node": "Create done", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create done": {
-      "main": [[{"node": "Merge", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare update": {
-      "main": [[{"node": "Update booking", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Update booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update booking": {
-      "main": [[{"node": "Update done", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Update done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update done": {
-      "main": [[{"node": "Merge", "type": "main", "index": 1}]]
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     },
     "Format list reply": {
-      "main": [[{"node": "Merge", "type": "main", "index": 2}]]
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
     },
     "Merge": {
-      "main": [[{"node": "Aggregate reply", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Aggregate reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate reply": {
-      "main": [[{"node": "Send reply", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Send reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send reply (only)": {
-      "main": [[], [{"node": "Error handler2", "type": "main", "index": 0}]]
+      "main": [
+        [],
+        [
+          {
+            "node": "Error handler2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send reply": {
-      "main": [[], [{"node": "Error handler3", "type": "main", "index": 0}]]
+      "main": [
+        [],
+        [
+          {
+            "node": "Error handler3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "OpenAI Chat Model": {
-      "ai_languageModel": [[{"node": "AI Agent Evelina", "type": "ai_languageModel", "index": 0}]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Evelina",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -806,7 +1320,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "timeSavedMode": "fixed",
-    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
@@ -816,6 +1330,5 @@
     "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
   },
   "nodeGroups": [],
-  "id": "gYeUySsS2BO9plFL",
   "tags": []
 }

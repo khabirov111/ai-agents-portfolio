@@ -13,7 +13,10 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "id": "252cc333-11e5-452d-9596-af42cee3b463",
       "name": "Every Day 15:00 MSK",
       "notes": "15:00 МСК = 17:00 по Уфе (Башкирия, UTC+5). n8n TZ = Europe/Moscow."
@@ -24,7 +27,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [224, 0],
+      "position": [
+        224,
+        0
+      ],
       "id": "be6569ba-5abe-4132-8c4e-6823edbb4f9d",
       "name": "Get Tomorrow (Уфа)"
     },
@@ -60,13 +66,16 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [448, 0],
+      "position": [
+        448,
+        0
+      ],
       "id": "55bd112c-0e53-40b0-8cf5-40b48b77e10c",
       "name": "Get Tomorrow Bookings",
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
       }
@@ -77,7 +86,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [672, 0],
+      "position": [
+        672,
+        0
+      ],
       "id": "ce5eebcb-3101-4108-834a-714eaafbd0e2",
       "name": "Format Reminders"
     },
@@ -91,14 +103,17 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [896, 0],
+      "position": [
+        896,
+        0
+      ],
       "id": "de23edbc-cd3c-40d9-aeb6-1518f57e69e2",
       "name": "Send Reminder",
       "webhookId": "eve-rem-17-send",
       "retryOnFail": true,
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "Evi bot"
         }
       }
@@ -107,16 +122,48 @@
   "pinData": {},
   "connections": {
     "Every Day 15:00 MSK": {
-      "main": [[{"node": "Get Tomorrow (Уфа)", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Tomorrow (Уфа)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Tomorrow (Уфа)": {
-      "main": [[{"node": "Get Tomorrow Bookings", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Tomorrow Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Tomorrow Bookings": {
-      "main": [[{"node": "Format Reminders", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Format Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Format Reminders": {
-      "main": [[{"node": "Send Reminder", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Send Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -124,7 +171,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "timeSavedMode": "fixed",
-    "errorWorkflow": "dzXSxNB5zU9llUiu",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
@@ -133,6 +180,5 @@
     "instanceId": "a1ca7a59ef8f9e1920740c59295462a6ef109a3e5a67d56d8ce8b86fce687a9f"
   },
   "nodeGroups": [],
-  "id": "k9s6ii891og0aJih",
   "tags": []
 }

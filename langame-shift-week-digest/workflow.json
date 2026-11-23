@@ -1,0 +1,537 @@
+{
+  "name": "Langame → Дайджест (смена + неделя)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "channel_post"
+        ],
+        "additionalFields": {}
+      },
+      "id": "n1",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "langame-digest-merged",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const u = $input.first().json;\nconst msg = u.channel_post || u.edited_channel_post || u.message || u.edited_message;\nif(!msg || !msg.document) return [];\n// слушаем только общий канал Langame (или личку — для ручной пересылки)\nconst LANGAME_CHAT = -1001234567890;\nif(msg.chat?.id !== LANGAME_CHAT && msg.chat?.type !== 'private') return [];\nconst name = msg.document.file_name || '';\nconst caption = msg.caption || '';\nlet kind = null;\nif(/^Отчет_по_смене_\\d+_/.test(name)) kind='shift';\nelse if(/^Отчет_по_неделе_\\d+_/.test(name)) kind='week';\nif(!kind) return [];\nif(!/\\.xlsx$/i.test(name)) return [];\nreturn [{json:{kind, fileName:name, caption, fileId: msg.document.file_id, chatId: msg.chat?.id, messageId: msg.message_id}}];\n"
+      },
+      "id": "n2",
+      "name": "Классификация",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Классификация').first().json.fileId }}"
+      },
+      "id": "n3",
+      "name": "Скачать файл",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": false
+        }
+      },
+      "id": "n4",
+      "name": "Читать xlsx",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== Расчёт отчёта Langame (shift / week). Вход: items Extract From File (строки листа \"Отчет\") =====\nconst typeInfo = $('Классификация').first().json;\nconst kind = typeInfo.kind; // 'shift' | 'week'\n\nfunction colIdx(k){ if(/^\\d+$/.test(k)) return +k; let n=0; for(const ch of String(k).toUpperCase()){ if(ch<'A'||ch>'Z') return -1; n=n*26+ch.charCodeAt(0)-64;} return n-1; }\nconst rows = $input.all().map(i=>{\n  const j=i.json; let arr=[];\n  if(Array.isArray(j.row)) arr=j.row.slice();\n  else if(Array.isArray(j)) arr=j.slice();\n  else for(const k of Object.keys(j)){ const ix=colIdx(k); if(ix>=0) arr[ix]=j[k]; }\n  return arr;\n});\nconst norm = s => String(s??'').replace(/\\s+/g,' ').trim();\nconst num = v => { if(typeof v==='number') return v; const n=parseFloat(String(v??'').replace(/\\s/g,'').replace(',','.')); return isNaN(n)?0:n; };\nconst L = rows.map(r=>norm(r[0]));\nconst find = (label, from=0, to=rows.length) => { for(let i=from;i<to;i++) if(L[i]===label) return i; return -1; };\n\n// колонки смен\nlet cols;\nif(kind==='shift') cols=[1];\nelse { const ir=find('ID'); const idRow=rows[find('ID',find('ID')+1)] ; cols=[]; for(let c=1;c<idRow.length;c++) if(typeof idRow[c]==='number'||/^\\d+$/.test(String(idRow[c]))) cols.push(c); }\nif(!cols.length || rows.length<50) throw new Error('Не удалось разобрать структуру файла: колонок смен='+cols.length+', строк='+rows.length);\nconst vals = (i)=> i<0 ? cols.map(()=>0) : cols.map(c=>num(rows[i][c]));\nconst sum = a=>a.reduce((x,y)=>x+y,0);\nconst sec = {};\nfor(const n of ['Статистика по балансам','Статистика по гостям','Статистика по ПК','Общая статистика','Статистика по операциям']) sec[n]=find(n);\nfor(const [n,i] of Object.entries(sec)) if(i<0) throw new Error('Не найден раздел «'+n+'» — формат файла изменился');\nconst g = (label, from, to) => vals(find(label, from, to));\nconst S = (label, from, to) => sum(g(label, from, to));\n\nconst revI = find('Итого выручка'); if(revI<0) throw new Error('Не найдена строка «Итого выручка»');\nconst revByShift = vals(revI);\nconst end1 = sec['Статистика по балансам'];\nconst chan = {};\nfor(const n of ['Касса администратора','Личный кабинет','Терминал самообслуживания','QR','Мобильное приложение','Планшет']) chan[n]=S(n,revI,end1);\nconst cashI = find('Касса администратора',revI,end1);\nconst cashAdmin = S('Наличные',cashI,end1);\nconst cardAdmin = S('Безналичные',cashI,end1);\nconst incas = S('Инкассации',cashI,end1);\n\nconst B=sec['Статистика по балансам'], G=sec['Статистика по гостям'], P=sec['Статистика по ПК'], O=sec['Общая статистика'], X=sec['Статистика по операциям'];\nconst m = {\n  revenue: sum(revByShift),\n  checks: S('Количество чеков',O,X),\n  guests: S('Уникальных гостей',G,P),\n  newGuests: S('Новые гости',G,P),\n  regs: S('Регистрации',G,P),\n  goodsSum: S('Сумма проданных товаров',O,X),\n  goodsQty: S('Количество проданных товаров',O,X),\n  goodsCost: S('Сумма проданных товаров по себестоимости',O,X),\n  written: S('Количество списанных товаров',O,X),\n  topup: S('Сумма пополнения на аккаунты',O,X),\n  sessions: S('Активированных сессий',P,O),\n  minutesPC: S('Минуты сессий на ПК',P,O),\n  minutesTV: S('Минуты сессий на ТВ',P,O),\n  bookDone: S('Сделанных бронирований',P,O),\n  bookAct: S('Активированных бронирований',P,O),\n  bonusIn: S('Пополнения бонусного баланса',B,G),\n  cashback: S('Кешбек по сессии',find('Пополнения бонусного баланса',B,G),G),\n  moneyOut: S('Списания денежного баланса',B,G),\n  bonusOut: S('Списания бонусного баланса',B,G),\n  moneyRet: S('Возвраты денежного баланса',B,G),\n  bonusRet: S('Возвраты бонусного баланса',B,G),\n  cash: cashAdmin, card: cardAdmin, incas, chan,\n  qr: S('QR',O,X), online: S('Картой онлайн',find('Сумма от способов пополнения',O,X),X),\n};\nconst loadArr = g('Загрузка в %',P,O).filter(x=>x>0);\nm.load = loadArr.length? sum(loadArr)/loadArr.length : 0;\nconst hp = g('Средняя стоимость часа',P,O).filter(x=>x>0); m.hourPrice = hp.length? sum(hp)/hp.length:0;\nconst hpn = g('Средняя стоимость часа без бонусов',P,O).filter(x=>x>0); m.hourPriceNB = hpn.length? sum(hpn)/hpn.length:0;\nm.avgCheck = m.checks? m.revenue/m.checks : 0;\n// товары по позициям\nconst tI = find('Товары', X, rows.length);\nlet tEnd = find('Услуги', tI, rows.length);\nconst products=[];\nfor(let i=tI+1;i<tEnd;i++){ const t=sum(vals(i)); if(L[i]) products.push({name:L[i], sum:t}); }\nproducts.sort((a,b)=>b.sum-a.sum);\n// шапка\nconst hdr = (label)=>{ const i=find(label); return i<0?'':rows[i][1]; };\nlet meta, perShift=[];\nif(kind==='shift'){\n  meta={ id:hdr('ID'), start:hdr('Дата начала'), end:hdr('Дата окончания'), admin:hdr('Администратор') };\n} else {\n  const i2=find('ID',find('ID')+1);\n  meta={ id:hdr('ID'), start:hdr('Дата начала'), end:hdr('Дата окончания') };\n  const A=rows[find('Администратор')], ids=rows[i2], st=rows[find('Дата начала',i2)];\n  const gs=g('Сумма проданных товаров',O,X), gq=g('Количество проданных товаров',O,X), ch=g('Количество чеков',O,X);\n  perShift = cols.map((c,k)=>({id:ids[c], admin:norm(A[c]), start:st[c], revenue:revByShift[k], goods:gs[k], qty:gq[k], checks:ch[k]}));\n  meta.shifts=cols.length; meta.firstShift=perShift[0].id; meta.lastShift=perShift[perShift.length-1].id;\n}\n// рейтинг админов по товарам\nconst adm={};\nfor(const s of perShift){ const a=adm[s.admin]=adm[s.admin]||{name:s.admin,shifts:0,goods:0,qty:0,revenue:0}; a.shifts++; a.goods+=s.goods; a.qty+=s.qty; a.revenue+=s.revenue; }\nconst ranking = Object.values(adm).filter(a=>a.goods>0).sort((a,b)=>b.goods-a.goods||b.qty-a.qty);\n// сверка\nconst checksList=[];\nconst chanSum=sum(Object.values(chan)); if(Math.abs(chanSum-m.revenue)>1) checksList.push(`сумма по каналам ${chanSum} ≠ выручка ${m.revenue}`);\nif(kind==='week'){ const rs=sum(perShift.map(s=>s.goods)); if(Math.abs(rs-m.goodsSum)>1) checksList.push('товары по сменам ≠ итог'); if(ranking.length && Math.abs(sum(ranking.map(a=>a.goods))-m.goodsSum)>1) checksList.push('рейтинг админов ≠ итог товаров'); }\nif(products.length && Math.abs(sum(products.map(p=>p.sum))-m.goodsSum)>1) checksList.push(`позиции товаров ${sum(products.map(p=>p.sum))} ≠ ${m.goodsSum}`);\nif(!(m.revenue>0)) checksList.push('нулевая выручка');\nif(m.checks<=0) checksList.push('нет чеков');\n\n// ===== сравнение с предыдущим (хранится в staticData) =====\nconst key = kind==='shift'?'prevShift':'prevWeek';\nconst cur = { id:meta.id, revenue:m.revenue, checks:m.checks, avgCheck:+m.avgCheck.toFixed(2), goodsSum:m.goodsSum, goodsQty:m.goodsQty, guests:m.guests, newGuests:m.newGuests, load:+m.load.toFixed(1), sessions:m.sessions, start:meta.start };\n// прошлое значение читаем из Google Таблицы (колонка «Данные», JSON)\nlet prevData=null, prevRaw='';\ntry{ prevRaw = $(kind==='shift'?'Прошлая смена':'Прошлая неделя').first().json['Данные'] || ''; }catch(e){}\ntry{ prevData = prevRaw? JSON.parse(prevRaw) : null; }catch(e){ prevData=null; }\n// если пришёл повтор того же отчёта — сравниваем с тем, что было до него\nlet prev = null;\nif(prevData && prevData.cur){ prev = String(prevData.cur.id)===String(cur.id) ? (prevData.prev||null) : prevData.cur; }\nconst newPrevOfPrev = prevData && prevData.cur && String(prevData.cur.id)!==String(cur.id) ? prevData.cur : (prevData?prevData.prev:null);\n\n// ===== формат =====\nconst e=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst f=(n,d=0)=>Number(n).toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(/ /g,' ');\nconst rub=n=>f(n)+' ₽';\nconst pct=(a,b)=>b? Math.round(a/b*1000)/10 : 0;\nconst dd=(t)=>String(t||'').slice(0,16);\nconst pk=(arr,seed)=>arr[Math.abs(parseInt(String(seed).replace(/\\D/g,''))||0)%arr.length];\nconst hours=(min)=>`${f(min/60,1)} ч`;\nconst dl=(a,b,d=0,unit='')=>{ if(b==null||b===0) return ''; const diff=a-b; if(!diff) return ' ➖ без изменений'; const p=pct(diff,Math.abs(b)); return ` ${diff>0?'▲ +':'▼ −'}${f(Math.abs(diff),d)}${unit} (${diff>0?'+':'−'}${f(Math.abs(p),1)}%)`; };\nconst medal=['🥇','🥈','🥉','4️⃣','5️⃣'];\nconst chIcon={'Касса администратора':'🏧 Касса админа','Личный кабинет':'🖥 Личный кабинет','Терминал самообслуживания':'🧮 Терминал','QR':'🔳 QR','Мобильное приложение':'📱 Приложение','Планшет':'📟 Планшет'};\nlet out=[]; const P_=(s)=>out.push(s);\nconst payBlock=()=>{ for(const [k,v] of Object.entries(chan)){ if(v<=0) continue; P_(`${chIcon[k]}: ${rub(v)} (${f(pct(v,m.revenue),1)}%)`); if(k==='Касса администратора'){ P_(`   ├ 💵 Наличные: ${rub(m.cash)}`); P_(`   └ 💳 Карта: ${rub(m.card)}`); } } };\nconst topProducts=(n)=>{ const tp=products.filter(p=>p.sum>0).slice(0,n); tp.forEach((p,i)=>P_(`   ${i+1}. ${e(p.name)} — ${rub(p.sum)}`)); };\nif(kind==='shift'){\n  const startH=parseInt(String(meta.start).slice(11,13)); const night = startH>=18 || startH<5;\n  P_(`${night?'🌙':'☀️'} <b>Отчёт за смену №${e(meta.id)}</b> · ${night?'ночная':'дневная'}`);\n  P_(`📅 ${e(dd(meta.start))} → ${e(dd(meta.end))}`);\n  P_(`👤 Админ: <b>${e(norm(meta.admin))}</b>`);\n  P_('');\n  P_(`💰 <b>Выручка: ${rub(m.revenue)}</b>${prev?dl(m.revenue,prev.revenue):''}`);\n  P_(`🧾 Чеков: <b>${f(m.checks)}</b>${prev?dl(m.checks,prev.checks):''}`);\n  P_(`🧮 Средний чек: <b>${f(m.avgCheck,2)} ₽</b>${prev?dl(m.avgCheck,prev.avgCheck,2):''}`);\n  P_('');\n  P_('💳 <b>Структура оплат</b>'); payBlock();\n  P_(`🏦 Инкассировано: <b>${rub(m.incas)}</b>${m.incas===m.cash?' ✅ равно наличным':''}`);\n  P_('');\n  P_('🎮 <b>Клуб</b>');\n  P_(`👥 Гостей: <b>${f(m.guests)}</b>${prev?dl(m.guests,prev.guests):''}`);\n  P_(`🆕 Новых: ${f(m.newGuests)} (регистраций ${f(m.regs)})`);\n  P_(`⚡ Загрузка: <b>${f(m.load,1)}%</b>${prev?dl(m.load,prev.load,1,' п.п.'):''}`);\n  P_(`🕹 Сессий: ${f(m.sessions)}`);\n  P_(`🖥 Время ПК: ${hours(m.minutesPC)}${m.minutesTV?` · 📺 ТВ: ${hours(m.minutesTV)}`:''}`);\n  P_(`⏱ Ср. стоимость часа: ${f(m.hourPrice)} ₽ (без бонусов ${f(m.hourPriceNB)} ₽)`);\n  if(m.bookDone) P_(`📆 Бронирований: ${f(m.bookDone)} (активировано ${f(m.bookAct)})`);\n  P_('');\n  P_('🥤 <b>Бар</b>');\n  P_(`🛒 Продано: <b>${f(m.goodsQty)} шт.</b> на <b>${rub(m.goodsSum)}</b>${prev?dl(m.goodsSum,prev.goodsSum):''}`);\n  if(products.some(p=>p.sum>0)){ P_('🔝 Позиции:'); topProducts(5); }\n  if(m.written) P_(`🗑 Списано: ${f(m.written)} шт.`);\n  P_('');\n  P_('🔄 <b>Балансы и бонусы</b>');\n  P_(`💸 Списано с баланса: ${rub(m.moneyOut)}`);\n  P_(`↩️ Возвраты: ${rub(m.moneyRet)} + бонусами ${rub(m.bonusRet)}`);\n  P_(`➕ Бонусов начислено: ${rub(m.bonusIn)}`);\n  P_(`➖ Бонусов списано: ${rub(m.bonusOut)}`);\n  P_('');\n  const sid=meta.id; const parts=[];\n      if(prev){ const d=pct(m.revenue-prev.revenue,prev.revenue);\n        if(d>=30) parts.push(pk([`🔥 Вот это смена! Выручка ${rub(m.revenue)} — на ${f(d,0)}% больше, чем в прошлой.`,`🚀 Отличный результат: ${rub(m.revenue)}, это на ${f(d,0)}% выше прошлой смены.`],sid));\n        else if(d>=10) parts.push(pk([`👍 Смена получилась лучше предыдущей: ${rub(m.revenue)} (+${f(d,1)}%).`,`📈 Приятный рост к прошлой смене — +${f(d,1)}%, итого ${rub(m.revenue)}.`],sid));\n        else if(d>-10) parts.push(pk([`😌 Ровная смена: ${rub(m.revenue)}, почти как в прошлый раз (${d>0?'+':''}${f(d,1)}%).`,`➖ Без сюрпризов: выручка ${rub(m.revenue)}, на уровне прошлой смены.`],sid));\n        else if(d>-30) parts.push(pk([`📉 Просадка к прошлой смене: ${rub(m.revenue)} (${f(d,1)}%). Стоит глянуть, что было с трафиком.`,`⚠️ Выручка ниже прошлой смены на ${f(Math.abs(d),1)}% — ${rub(m.revenue)}.`],sid));\n        else parts.push(pk([`🥶 Тихая смена: ${rub(m.revenue)}, это на ${f(Math.abs(d),0)}% меньше прошлой. Стоит разобраться, почему.`,`🔻 Сильная просадка (${f(d,0)}%) к прошлой смене — ${rub(m.revenue)}.`],sid));\n      } else parts.push(`💰 Выручка смены — ${rub(m.revenue)}, сравнить пока не с чем: в таблице нет прошлой смены.`);\n      if(prev){ const dc=m.checks-prev.checks, da=m.avgCheck-prev.avgCheck;\n        if(dc>0&&da>0) parts.push('🧾 Чеков стало больше и средний чек вырос — растём и по количеству, и по качеству 💪');\n        else if(dc>0&&da<=0) parts.push('🧾 Гостей прошло больше, но средний чек просел — деньги дают объём, а не чек.');\n        else if(dc<=0&&da>0) parts.push('🧾 Чеков меньше, зато средний чек выше — гости тратят больше.');\n        else parts.push('🧾 Чеков и средний чек ниже прошлой смены — слабовато.'); }\n      if(m.load>=40) parts.push(`⚡ Клуб был загружен на ${f(m.load,1)}% — почти полный зал 🎮`);\n      else if(m.load<20) parts.push(`⚡ Загрузка всего ${f(m.load,1)}% — зал большую часть смены пустовал.`);\n      else if(prev && m.load-prev.load>=3) parts.push(`⚡ Загрузка выросла до ${f(m.load,1)}%.`);\n      if(m.newGuests>=3) parts.push(`🆕 Приятно: ${f(m.newGuests)} новых гостей 🙌`);\n      if(products.length&&products[0].sum>0) parts.push(`🥤 На баре лидировал ${products[0].name} (${rub(products[0].sum)}).`);\n      if(m.goodsSum===0) parts.push('Бар сегодня без продаж — стоит напомнить админу про допродажи 🥤');\n      const concl=parts;\n  \n  P_('📝 <b>Итог</b>'); P_(e(concl.join('\\n')));\n} else {\n  P_(`📊 <b>Отчёт за неделю №${e(meta.id)}</b>`);\n  P_(`📅 ${e(dd(meta.start))} → ${e(dd(meta.end))}`);\n  P_(`🔢 Смен: ${meta.shifts} (№${meta.firstShift}–${meta.lastShift})`);\n  P_('');\n  const best=[...perShift].sort((a,b)=>b.revenue-a.revenue)[0], worst=[...perShift].sort((a,b)=>a.revenue-b.revenue)[0];\n  P_(`💰 <b>Выручка: ${rub(m.revenue)}</b>${prev?dl(m.revenue,prev.revenue):''}`);\n  P_(`🧾 Чеков: <b>${f(m.checks)}</b>${prev?dl(m.checks,prev.checks):''}`);\n  P_(`🧮 Средний чек: <b>${f(m.avgCheck,2)} ₽</b>${prev?dl(m.avgCheck,prev.avgCheck,2):''}`);\n  P_(`📆 В среднем за смену: ${rub(m.revenue/meta.shifts)}`);\n  P_(`🔝 Лучшая смена: №${best.id} — ${rub(best.revenue)} (${e(best.admin.split(' ').slice(0,2).join(' '))})`);\n  P_(`🔻 Слабая смена: №${worst.id} — ${rub(worst.revenue)}`);\n  P_('');\n  P_('💳 <b>Структура оплат</b>'); payBlock();\n  P_(`🏦 Инкассировано за неделю: <b>${rub(m.incas)}</b>`);\n  P_('');\n  P_('🎮 <b>Клуб</b>');\n  P_(`👥 Гостей: <b>${f(m.guests)}</b>${prev?dl(m.guests,prev.guests):''}`);\n  P_(`🆕 Новых: <b>${f(m.newGuests)}</b>${prev?dl(m.newGuests,prev.newGuests):''}`);\n  P_(`⚡ Средняя загрузка: <b>${f(m.load,1)}%</b>${prev?dl(m.load,prev.load,1,' п.п.'):''}`);\n  P_(`🕹 Сессий: ${f(m.sessions)}`);\n  P_(`🖥 Время ПК: ${hours(m.minutesPC)}`);\n  P_(`⏱ Ср. стоимость часа: ${f(m.hourPrice)} ₽`);\n  P_('');\n  P_('🥤 <b>Бар</b>');\n  P_(`🛒 Продано: <b>${f(m.goodsQty)} шт.</b> на <b>${rub(m.goodsSum)}</b>${prev?dl(m.goodsSum,prev.goodsSum):''}`);\n  P_(`📈 Доля в выручке: ${f(pct(m.goodsSum,m.revenue),1)}%`);\n  if(products.some(p=>p.sum>0)){ P_('🔝 Топ позиций:'); topProducts(5); }\n  P_('');\n  P_('🏆 <b>ТОП админов по продаже товаров</b>');\n  ranking.slice(0,5).forEach((a,i)=>{ P_(`${medal[i]} <b>${e(a.name)}</b>`); P_(`   └ ${rub(a.goods)} · ${f(a.qty)} шт. · ${a.shifts} см. · ${rub(Math.round(a.goods/a.shifts))}/смена`); });\n  P_('');\n  P_('🔄 <b>Возвраты и бонусы</b>');\n  P_(`↩️ Возвраты: ${rub(m.moneyRet)} + бонусами ${rub(m.bonusRet)}`);\n  P_(`➕ Бонусов начислено: ${rub(m.bonusIn)}`);\n  P_(`➖ Бонусов списано: ${rub(m.bonusOut)}`);\n  P_('');\n  const sid=meta.id; const parts=[];\n      if(prev){ const d=pct(m.revenue-prev.revenue,prev.revenue);\n        if(d>=15) parts.push(pk([`🔥 Сильная неделя: ${rub(m.revenue)}, это на ${f(d,1)}% больше прошлой.`,`🚀 Рост к прошлой неделе +${f(d,1)}% — итого ${rub(m.revenue)}.`],sid));\n        else if(d>=3) parts.push(`👍 Неделя лучше прошлой: ${rub(m.revenue)} (+${f(d,1)}%).`);\n        else if(d>-3) parts.push(`➖ Неделя в ровном темпе: ${rub(m.revenue)}, почти как прошлая (${d>0?'+':''}${f(d,1)}%).`);\n        else if(d>-15) parts.push(`📉 Неделя слабее прошлой на ${f(Math.abs(d),1)}% — ${rub(m.revenue)}.`);\n        else parts.push(`🥶 Заметная просадка: ${f(d,1)}% к прошлой неделе, итого ${rub(m.revenue)}.`);\n      } else parts.push(`💰 Выручка недели — ${rub(m.revenue)}, сравнить пока не с чем: в таблице нет прошлой недели.`);\n      parts.push(`📆 В среднем ${rub(m.revenue/meta.shifts)} за смену, лучшая — №${best.id} (${rub(best.revenue)}), слабее всех — №${worst.id} (${rub(worst.revenue)}).`);\n      if(prev){ const dn=m.newGuests-prev.newGuests; if(dn>0) parts.push(`🆕 Новых гостей на ${f(dn)} больше, чем неделей раньше — всего ${f(m.newGuests)} 🙌`); else if(dn<0) parts.push(`🆕 Новых гостей стало меньше (${f(m.newGuests)}) — можно подтолкнуть акциями.`); }\n      if(ranking[0]){ const r0=ranking[0]; parts.push(`🏆 По бару выше всех ${r0.name.split(' ').slice(0,2).join(' ')} — ${rub(r0.goods)} за ${r0.shifts} см.`);\n        const eff=[...ranking].sort((a,b)=>b.goods/b.shifts-a.goods/a.shifts)[0]; if(eff && eff.name!==r0.name) parts.push(`⭐ А по выручке бара на одну смену впереди ${eff.name.split(' ').slice(0,2).join(' ')} — ${rub(Math.round(eff.goods/eff.shifts))}.`); }\n      parts.push(`🥤 Бар дал ${f(pct(m.goodsSum,m.revenue),1)}% выручки.`);\n      const concl=parts;\n  \n  P_('📝 <b>Итог</b>'); P_(e(concl.join('\\n')));\n}\nlet text = out.join('\\n');\nif(checksList.length){\n  text = `⚠️ <b>Сверка не сошлась</b> (${e(checksList.join('; '))}). Проверьте файл ${e(typeInfo.fileName)}.\\n\\n`+text;\n}\nconst data = checksList.length && prevRaw ? prevRaw : JSON.stringify({cur, prev:newPrevOfPrev||null});\nreturn [{json:{text, data, kind, meta, metrics:m, checks:checksList, ranking, cur, prev}}];\n"
+      },
+      "id": "n5",
+      "name": "Расчёт и дайджест",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "id": "n6",
+      "name": "Отправить дайджест",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "MID n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Расчёт и дайджест').first().json.kind }}",
+              "rightValue": "shift",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n7",
+      "name": "Смена?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Мид": 1,
+            "Смена": "={{ $('Расчёт и дайджест').first().json.text }}",
+            "Данные": "={{ $('Расчёт и дайджест').first().json.data }}"
+          },
+          "matchingColumns": [
+            "Мид"
+          ],
+          "schema": [
+            {
+              "id": "Мид",
+              "displayName": "Мид",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Смена",
+              "displayName": "Смена",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Данные",
+              "displayName": "Данные",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Таблица: 1 смена",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        -100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Мид": 1,
+            "Неделя": "={{ $('Расчёт и дайджест').first().json.text }}",
+            "Данные": "={{ $('Расчёт и дайджест').first().json.data }}"
+          },
+          "matchingColumns": [
+            "Мид"
+          ],
+          "schema": [
+            {
+              "id": "Мид",
+              "displayName": "Мид",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Неделя",
+              "displayName": "Неделя",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            },
+            {
+              "id": "Данные",
+              "displayName": "Данные",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsed": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "n9",
+      "name": "Таблица: Нед",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.kind }}",
+              "rightValue": "shift",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n10",
+      "name": "Тип отчёта?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        330,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Мид",
+              "lookupValue": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n11",
+      "name": "Прошлая смена",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лист1",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Мид",
+              "lookupValue": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n12",
+      "name": "Прошлая неделя",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Классификация",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Классификация": {
+      "main": [
+        [
+          {
+            "node": "Тип отчёта?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Скачать файл": {
+      "main": [
+        [
+          {
+            "node": "Читать xlsx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Читать xlsx": {
+      "main": [
+        [
+          {
+            "node": "Расчёт и дайджест",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт и дайджест": {
+      "main": [
+        [
+          {
+            "node": "Отправить дайджест",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить дайджест": {
+      "main": [
+        [
+          {
+            "node": "Смена?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Смена?": {
+      "main": [
+        [
+          {
+            "node": "Таблица: 1 смена",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Таблица: Нед",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Тип отчёта?": {
+      "main": [
+        [
+          {
+            "node": "Прошлая смена",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Прошлая неделя",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Прошлая смена": {
+      "main": [
+        [
+          {
+            "node": "Скачать файл",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Прошлая неделя": {
+      "main": [
+        [
+          {
+            "node": "Скачать файл",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "active": false
+}
