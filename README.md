@@ -2,7 +2,9 @@
 
 **ИИ-агенты и автоматизация на n8n · Telegram-боты · RAG · парсинг и интеграции**
 
-> 🟢 **Открыт к проектам и удалённой работе.**
+> 🟢 **Открыт к проектам и удалённой работе.** Пишите: Telegram [@ai_bot102](https://t.me/ai_bot102) · khabirov111@gmail.com
+
+> 🇬🇧 *I build production-style AI agents and automations in n8n for small businesses: report digests from Excel, review monitoring, RAG assistants and voice assistants in Telegram. Russian-speaking, remote, UTC+5. Every project below is a working workflow with secrets replaced by placeholders.*
 
 Все проекты в этом репозитории собраны под реальные задачи (мой компьютерный клуб и заказчики), а не как учебные заготовки. В репозитории лежат воркфлоу для импорта, код расчётных нод, системные промпты и скриншоты результата.
 
@@ -74,14 +76,14 @@ flowchart LR
 | # | Проект | Суть | Стек | Статус |
 |---|---|---|---|---|
 | 1 | [Дайджест смен и недель](./langame-shift-week-digest/) | Excel Langame → расчёт в коде → дайджест, ТОП админов, сравнение с прошлым периодом | n8n, Telegram, Google Sheets, JavaScript | ✅ в работе |
-| 2 | [Ежемесячный дайджест](./langame-monthly-digest/) | Посуточный отчёт → аналитика, рейтинг напитков, «что изменилось» к прошлому месяцу | n8n, Telegram, Google Sheets, JavaScript | ✅ в работе |
-| 3 | [Отзывы Яндекс Карт](./reviews-yandex/) | Еженедельный мониторинг по 6 клубам, защита от капчи и сбоев | n8n, HTTP, парсинг HTML, DeepSeek, Telegram | ✅ в работе |
-| 4 | [Отзывы 2ГИС](./reviews-2gis/) | Сбор через Apify по всем клубам, дайджест за неделю | n8n, Apify API, DeepSeek, Telegram | ✅ в работе |
-| 5 | [Генератор идей для Reels](./reels-generator/) | Идеи для коротких видео каждые 12 часов, без повторов | n8n, DeepSeek, Telegram | ✅ в работе |
-| 6 | [RAG-ассистент для администраторов](./rag-assistant/) | Ответы по регламенту со ссылкой на пункт, эскалация руководителю | n8n, Qdrant, Embeddings, Telegram | ✅ в работе |
-| 7 | [Ассистент инженера ВИК](./vik-assistant/) | Мультимодальный (текст, фото, голос) строгий RAG по нормативу | n8n, Qdrant, Vision, Whisper | ✅ в работе |
-| 8 | [Ассистент мастера маникюра](./nail-technician-assistant/) | Запись клиентов голосом и текстом, расписание, напоминания | n8n, Whisper, Google Sheets | ✅ в работе |
-| 9 | [Ассистент руководителя благотворительного фонда](./umar-fund-assistant/) | Учёт финансов и задач голосом и текстом, голосовые ответы (TTS) | n8n, Whisper, TTS, Google Sheets | ✅ в работе |
+| 2 | [Ежемесячный дайджест](./langame-monthly-digest/) | Посуточный отчёт → аналитика, рейтинг напитков, «что изменилось» к прошлому месяцу | n8n, Telegram, Google Sheets, JavaScript | 🧪 готов к запуску |
+| 3 | [Отзывы Яндекс Карт](./reviews-yandex/) | Еженедельный мониторинг по 6 клубам, защита от капчи и сбоев | n8n, HTTP, парсинг HTML, DeepSeek, Telegram | 🔄 обновлён (v2) |
+| 4 | [Отзывы 2ГИС](./reviews-2gis/) | Сбор через Apify по всем клубам, дайджест за неделю | n8n, Apify API, DeepSeek, Telegram | 🔄 обновлён (v2) |
+| 5 | [Генератор идей для Reels](./reels-generator/) | Идеи для коротких видео каждые 12 часов, без повторов | n8n, DeepSeek, Telegram | 🔄 обновлён (v2) |
+| 6 | [RAG-ассистент для администраторов](./rag-assistant/) | Ответы по регламенту со ссылкой на пункт, эскалация руководителю | n8n, Qdrant, Embeddings, Telegram | ✅ |
+| 7 | [Ассистент инженера ВИК](./vik-assistant/) | Мультимодальный (текст, фото, голос) строгий RAG по нормативу | n8n, Qdrant, Vision, Whisper | ✅ |
+| 8 | [Ассистент мастера маникюра](./nail-technician-assistant/) | Запись клиентов голосом и текстом, расписание, напоминания | n8n, Whisper, Google Sheets | ✅ |
+| 9 | [Ассистент руководителя благотворительного фонда](./umar-fund-assistant/) | Учёт финансов и задач голосом и текстом, голосовые ответы (TTS) | n8n, Whisper, TTS, Google Sheets | ✅ |
 
 ---
 
