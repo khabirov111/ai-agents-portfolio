@@ -2,9 +2,7 @@
 
 **ИИ-агенты и автоматизация на n8n · Telegram-боты · RAG · парсинг и интеграции**
 
-> 🟢 **Открыт к проектам и удалённой работе.** Пишите: Telegram [@ai_bot102](https://t.me/ai_bot102) · khabirov111@gmail.com
-
-> 🇬🇧 *I build production-style AI agents and automations in n8n for small businesses: report digests from Excel, review monitoring, RAG assistants and voice assistants in Telegram. Russian-speaking, remote, UTC+5. Every project below is a working workflow with secrets replaced by placeholders.*
+> 🟢 **Открыт к проектам и удалённой работе.** Контакты в конце страницы.
 
 Все проекты в этом репозитории собраны под реальные задачи (мой компьютерный клуб и заказчики), а не как учебные заготовки. В репозитории лежат воркфлоу для импорта, код расчётных нод, системные промпты и скриншоты результата.
 
